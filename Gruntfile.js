@@ -109,15 +109,22 @@ module.exports = function(grunt) {
       }
     },
     includereplace: {
-      dist: {
-        files: {
-          'dist': 'dist/<%= pkg.name %>.js'
+      rfc4475: {
+        src: 'test/spec/Parser.js.template',
+        dest: 'test/spec/Parser.js',
+        options: {
+          processIncludeContents: function (contents) {
+            return JSON.stringify(contents.replace(/([^\r])\n/g, '$1\r\n'));
+          }
         }
       },
+      dist: {
+        src: 'dist/<%= pkg.name %>.js',
+        dest: 'dist/<%= pkg.name %>.js'
+      },
       devel: {
-        files: {
-          'dist': 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
-        }
+        src: 'dist/<%= pkg.name %>-<%= pkg.version %>.js',
+        dest: 'dist/<%= pkg.name %>-<%= pkg.version %>.js'
       }
     },
     jshint: {
@@ -245,7 +252,7 @@ grunt.registerTask('build', ['concat:devel', 'includereplace:devel', 'jshint:dev
   grunt.registerTask('devel', ['concat:devel', 'includereplace:devel', 'jshint:devel', 'concat:post_devel']);
 
   // Test tasks.
-  grunt.registerTask('test',['jasmine']);
+  grunt.registerTask('test',['includereplace:rfc4475', 'jasmine']);
 
   // Travis CI task.
   // Doc: http://manuel.manuelles.nl/blog/2012/06/22/integrate-travis-ci-into-grunt/
