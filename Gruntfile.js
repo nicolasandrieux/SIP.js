@@ -110,8 +110,8 @@ module.exports = function(grunt) {
     },
     includereplace: {
       rfc4475: {
-        src: 'test/spec/Parser.js.template',
-        dest: 'test/spec/Parser.js',
+        src: 'test/spec/rfc4475/rfc4475.js',
+        dest: 'test/spec/rfc4475.js',
         options: {
           processIncludeContents: function (contents) {
             return JSON.stringify(contents.replace(/([^\r])\n/g, '$1\r\n'));
