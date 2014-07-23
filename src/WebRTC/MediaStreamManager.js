@@ -39,12 +39,18 @@ MediaStreamManager.streamId = function (stream) {
     .join('');
 };
 
+/**
+ * @param {MediaStream} stream - The stream to render
+ *
+ * @param {(Array of) HTMLMediaElement} elements
+ *        - The <audio>/<video> element(s) that should render the stream
+ */
 MediaStreamManager.render = function render (stream, elements) {
   if (!elements) {
     return false;
   }
 
-  function attachAndPlay (element, stream) {
+  function attachAndPlay (stream, element) {
     (global.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
@@ -74,15 +80,9 @@ MediaStreamManager.render = function render (stream, elements) {
     }, interval);
   }
 
-  if (elements.video) {
-    if (elements.audio) {
-      elements.video.volume = 0;
-    }
-    attachAndPlay(elements.video, stream);
-  }
-  if (elements.audio) {
-    attachAndPlay(elements.audio, stream);
-  }
+  // [].concat "casts" `elements` into an array
+  // so forEach works even if `elements` was a single element
+  [].concat(elements).forEach(attachAndPlay.bind(null, stream));
 };
 
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
