@@ -60,7 +60,8 @@ UA = function(configuration) {
     'registrationFailed',
     'invite',
     'newSession',
-    'message'
+    'message',
+    'refer'
   ], i, len;
 
   // Helper function for forwarding events
@@ -675,6 +676,11 @@ UA.prototype.receiveRequest = function(request) {
          * ACK request without a corresponding Invite Transaction
          * and without To tag.
          */
+        break;
+      case SIP.C.REFER:
+        // TODO this is needed for the NOTIFY to happen
+        var sendRequest = function () {};
+        SIP.Utils.receiveRefer(this, request, sendRequest);
         break;
       default:
         request.reply(405);
