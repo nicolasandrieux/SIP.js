@@ -641,29 +641,7 @@ Session.prototype = {
         break;
       case SIP.C.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
-          this.logger.log('REFER received');
-          request.reply(202, 'Accepted');
-          var
-            hasReferListener = this.checkListener('refer'),
-            notifyBody = hasReferListener ?
-              'SIP/2.0 100 Trying' :
-              // RFC 3515.2.4.2: 'the UA MAY decline the request.'
-              'SIP/2.0 603 Declined'
-          ;
-
-          this.sendRequest(SIP.C.NOTIFY, {
-            extraHeaders:[
-              'Event: refer',
-              'Subscription-State: terminated',
-              'Content-Type: message/sipfrag'
-            ],
-            body: notifyBody,
-            receiveResponse: function() {}
-          });
-
-          if (hasReferListener) {
-            this.emit('refer', request);
-          }
+          SIP.Utils.receiveRefer(this, request, this.sendRequest.bind(this));
         }
         break;
     }

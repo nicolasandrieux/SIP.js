@@ -122,6 +122,32 @@ Utils= {
     };
   },
 
+  receiveRefer: function receiveRefer (sessionOrUA, request, sendRequest) {
+    sessionOrUA.logger.log('REFER received');
+    request.reply(202, 'Accepted');
+    var
+      hasReferListener = sessionOrUA.checkListener('refer'),
+      notifyBody = hasReferListener ?
+        'SIP/2.0 100 Trying' :
+        // RFC 3515.2.4.2: 'the UA MAY decline the request.'
+        'SIP/2.0 603 Declined'
+    ;
+
+    sendRequest(SIP.C.NOTIFY, {
+      extraHeaders:[
+        'Event: refer',
+        'Subscription-State: terminated',
+        'Content-Type: message/sipfrag'
+      ],
+      body: notifyBody,
+      receiveResponse: function() {}
+    });
+
+    if (hasReferListener) {
+      sessionOrUA.emit('refer', request);
+    }
+  },
+
   str_utf8_length: function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
   },
