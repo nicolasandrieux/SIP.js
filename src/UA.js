@@ -290,6 +290,11 @@ UA.prototype.message = function(target, body, options) {
   return this.request(SIP.C.MESSAGE, target, options);
 };
 
+UA.prototype.refer = function refer (referee, referTarget, options) {
+  var referInfo = SIP.Utils.getReferInfo(this, referTarget, options, this.contact);
+  return this.request(SIP.C.REFER, referee, referInfo.options);
+};
+
 UA.prototype.request = function (method, target, options) {
   var req = new SIP.ClientContext(this, method, target, options);
 
