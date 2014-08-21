@@ -63,6 +63,65 @@ Utils= {
     options[winner] = options[winner] || options[loser] || defaultValue;
   },
 
+  getReferInfo: function getReferInfo (ua, target, options, contact, status) {
+    options = options || {};
+    var extraHeaders = (options.extraHeaders || []).slice(),
+        originalTarget = target,
+        sipTarget = true;
+
+    extraHeaders.push('Contact: ' + contact);
+    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(ua));
+
+    if (target === undefined) {
+      throw new TypeError('Not enough arguments');
+    } else if (target instanceof SIP.InviteServerContext ||
+        target instanceof SIP.InviteClientContext) {
+      //Attended Transfer
+      // B.refer(C)
+      extraHeaders.push([
+        'Refer-To: <', target.dialog.remote_target.toString(),
+        '?Replaces=', target.dialog.id.call_id,
+        '%3Bto-tag%3D', target.dialog.id.remote_tag,
+        '%3Bfrom-tag%3D', target.dialog.id.local_tag,
+        '>'].join('')
+      );
+    } else {
+      //Blind Transfer
+
+      // Check Session Status
+      if (status != null && status !== SIP.Session.C.STATUS_CONFIRMED) {
+        throw new SIP.Exceptions.InvalidStateError(status);
+      }
+
+      // normalizeTarget allows instances of SIP.URI to pass through unaltered,
+      // so try to make one ahead of time
+      try {
+        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
+      } catch (e) {
+        this.logger.debug(".refer() cannot parse Refer_To from", target);
+        this.logger.debug("...falling through to normalizeTarget()");
+      }
+
+      // Check target validity
+      target = ua.normalizeTarget(target);
+      if (!target) {
+        throw new TypeError('Invalid target: ' + originalTarget);
+      }
+
+      extraHeaders.push('Refer-To: '+ target);
+      sipTarget = /^sips?:/.test(target.toString());
+    }
+
+    return {
+      options: {
+        extraHeaders: extraHeaders,
+        body: options.body,
+        receiveResponse: function() {}
+      },
+      sipTarget: sipTarget
+    };
+  },
+
   str_utf8_length: function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
   },

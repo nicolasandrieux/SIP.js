@@ -200,54 +200,11 @@ Session.prototype = {
   },
 
   refer: function(target, options) {
-    options = options || {};
-    var extraHeaders = (options.extraHeaders || []).slice(),
-        originalTarget = target;
-
-    if (target === undefined) {
-      throw new TypeError('Not enough arguments');
-    } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
-      //Attended Transfer
-      // B.transfer(C)
-      extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
-    } else {
-      //Blind Transfer
-
-      // Check Session Status
-      if (this.status !== C.STATUS_CONFIRMED) {
-        throw new SIP.Exceptions.InvalidStateError(this.status);
-      }
-
-      // normalizeTarget allows instances of SIP.URI to pass through unaltered,
-      // so try to make one ahead of time
-      try {
-        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
-      } catch (e) {
-        this.logger.debug(".refer() cannot parse Refer_To from", target);
-        this.logger.debug("...falling through to normalizeTarget()");
-      }
-
-      // Check target validity
-      target = this.ua.normalizeTarget(target);
-      if (!target) {
-        throw new TypeError('Invalid target: ' + originalTarget);
-      }
-
-      extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
-      extraHeaders.push('Refer-To: '+ target);
-    }
-
+    var referInfo = SIP.Utils.getReferInfo(this.ua, target, options, this.contact, this.status);
     // Send the request
-    this.sendRequest(SIP.C.REFER, {
-      extraHeaders: extraHeaders,
-      body: options.body,
-      receiveResponse: function() {}
-    });
+    this.sendRequest(SIP.C.REFER, referInfo.options);
     // hang up only if we transferred to a SIP address
-    if (target.scheme.match("^sips?$")) {
+    if (referInfo.sipTarget) {
       this.terminate();
     }
     return this;
