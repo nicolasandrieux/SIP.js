@@ -76,8 +76,15 @@ SIP.Subscription.prototype = {
         cause = SIP.Utils.getReasonPhrase(response.status_code);
 
     if (this.errorCodes.indexOf(response.status_code) !== -1) {
+      // JMF TODO remove To tag from this.request?
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
+      // add To tag to this.request
+      var toRaw = this.request.getHeader('To');
+      var toParsed = SIP.Grammar.parse(toRaw, 'To');
+      toParsed.setParam('tag', response.parseHeader('To').getParam('tag'));
+      this.request.setHeader('To', toParsed);
+
       expires = response.getHeader('Expires');
       SIP.Timers.clearTimeout(this.timers.N);
 
