@@ -525,5 +525,5 @@ Utils= {
   }
 };
 
-SIP.Utils = Utils;
+return Utils;
 };

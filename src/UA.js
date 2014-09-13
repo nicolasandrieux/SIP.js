@@ -1453,5 +1453,5 @@ UA.configuration_check = {
 };
 
 UA.C = C;
-SIP.UA = UA;
+return UA;
 };

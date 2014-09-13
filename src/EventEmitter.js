@@ -196,5 +196,5 @@ EventEmitter.prototype = {
 
 EventEmitter.C = C;
 
-SIP.EventEmitter = EventEmitter;
+return EventEmitter;
 };

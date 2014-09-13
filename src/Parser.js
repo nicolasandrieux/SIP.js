@@ -256,5 +256,5 @@ Parser.parseMessage = function(data, ua) {
   return message;
 };
 
-SIP.Parser = Parser;
+return Parser;
 };

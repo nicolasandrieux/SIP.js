@@ -252,5 +252,5 @@ Dialog.prototype = {
 };
 
 Dialog.C = C;
-SIP.Dialog = Dialog;
+return Dialog;
 };
