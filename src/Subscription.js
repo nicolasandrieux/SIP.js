@@ -8,7 +8,7 @@
  * @class Class creating a SIP Subscription.
  */
 module.exports = function (SIP) {
-SIP.Subscription = function (ua, target, event, options) {
+var Subscription = function (ua, target, event, options) {
   var events;
 
   options = options || {};
@@ -56,7 +56,7 @@ SIP.Subscription = function (ua, target, event, options) {
   this.initMoreEvents(events);
 };
 
-SIP.Subscription.prototype = {
+Subscription.prototype = {
   subscribe: function() {
     var sub = this;
 
@@ -285,4 +285,6 @@ SIP.Subscription.prototype = {
     }
   }
 };
+
+return Subscription;
 };
