@@ -20,7 +20,7 @@ Object.defineProperties(SIP, {
 
 SIP.Utils = require('./Utils')(SIP);
 SIP.LoggerFactory = require('./LoggerFactory');
-SIP.EventEmitter = require('./EventEmitter')(SIP);
+SIP.EventEmitter = require('./EventEmitter');
 SIP.C = require('./Constants')(SIP.name, SIP.version);
 SIP.Exceptions = require('./Exceptions');
 SIP.Timers = require('./Timers');
