@@ -2,19 +2,20 @@
  * @fileoverview EventEmitter
  */
 
+var LoggerFactory = require('./LoggerFactory');
+
 /**
  * @augments SIP
  * @class Class creating an event emitter.
  */
-module.exports = function (SIP) {
 var
   EventEmitter,
-  logger = new SIP.LoggerFactory().getLogger('sip.eventemitter'),
+  logger = new LoggerFactory().getLogger('sip.eventemitter'),
   C = {
     MAX_LISTENERS: 10
   };
 
-EventEmitter = function(){};
+EventEmitter = module.exports = function(){};
 EventEmitter.prototype = {
   /**
    * Initialize events dictionaries.
@@ -195,6 +196,3 @@ EventEmitter.prototype = {
 };
 
 EventEmitter.C = C;
-
-return EventEmitter;
-};
