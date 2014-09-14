@@ -2,11 +2,14 @@
  * @fileoverview SIP Transactions
  */
 
+var EventEmitter = require('./EventEmitter');
+var Timers = require('./Timers');
+var Utils = require('./Utils');
+
 /**
  * SIP Transactions module.
  * @augments SIP
  */
-module.exports = function (SIP) {
 var
   C = {
     // Transaction states
@@ -26,11 +29,11 @@ var
   };
 
 /**
-* @augments SIP.Transactions
+* @augments Transactions
 * @class Non Invite Client Transaction
-* @param {SIP.RequestSender} request_sender
-* @param {SIP.OutgoingRequest} request
-* @param {SIP.Transport} transport
+* @param {RequestSender} request_sender
+* @param {OutgoingRequest} request
+* @param {Transport} transport
 */
 var NonInviteClientTransaction = function(request_sender, request, transport) {
   var via,
@@ -53,7 +56,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.initEvents(events);
 };
-NonInviteClientTransaction.prototype = new SIP.EventEmitter();
+NonInviteClientTransaction.prototype = new EventEmitter();
 
 NonInviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -64,7 +67,7 @@ NonInviteClientTransaction.prototype.send = function() {
   var tr = this;
 
   this.stateChanged(C.STATUS_TRYING);
-  this.F = SIP.Timers.setTimeout(tr.timer_F.bind(tr), SIP.Timers.TIMER_F);
+  this.F = Timers.setTimeout(tr.timer_F.bind(tr), Timers.TIMER_F);
 
   if(!this.transport.send(this.request)) {
     this.onTransportError();
@@ -73,8 +76,8 @@ NonInviteClientTransaction.prototype.send = function() {
 
 NonInviteClientTransaction.prototype.onTransportError = function() {
   this.logger.log('transport error occurred, deleting non-INVITE client transaction ' + this.id);
-  SIP.Timers.clearTimeout(this.F);
-  SIP.Timers.clearTimeout(this.K);
+  Timers.clearTimeout(this.F);
+  Timers.clearTimeout(this.K);
   this.stateChanged(C.STATUS_TERMINATED);
   this.request_sender.ua.destroyTransaction(this);
   this.request_sender.onTransportError();
@@ -110,7 +113,7 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
       case C.STATUS_TRYING:
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_COMPLETED);
-        SIP.Timers.clearTimeout(this.F);
+        Timers.clearTimeout(this.F);
 
         if(status_code === 408) {
           this.request_sender.onRequestTimeout();
@@ -118,7 +121,7 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
           this.request_sender.receiveResponse(response);
         }
 
-        this.K = SIP.Timers.setTimeout(tr.timer_K.bind(tr), SIP.Timers.TIMER_K);
+        this.K = Timers.setTimeout(tr.timer_K.bind(tr), Timers.TIMER_K);
         break;
       case C.STATUS_COMPLETED:
         break;
@@ -129,11 +132,11 @@ NonInviteClientTransaction.prototype.receiveResponse = function(response) {
 
 
 /**
-* @augments SIP.Transactions
+* @augments Transactions
 * @class Invite Client Transaction
-* @param {SIP.RequestSender} request_sender
-* @param {SIP.OutgoingRequest} request
-* @param {SIP.Transport} transport
+* @param {RequestSender} request_sender
+* @param {OutgoingRequest} request
+* @param {Transport} transport
 */
 var InviteClientTransaction = function(request_sender, request, transport) {
   var via,
@@ -163,7 +166,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.initEvents(events);
 };
-InviteClientTransaction.prototype = new SIP.EventEmitter();
+InviteClientTransaction.prototype = new EventEmitter();
 
 InviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -173,7 +176,7 @@ InviteClientTransaction.prototype.stateChanged = function(state) {
 InviteClientTransaction.prototype.send = function() {
   var tr = this;
   this.stateChanged(C.STATUS_CALLING);
-  this.B = SIP.Timers.setTimeout(tr.timer_B.bind(tr), SIP.Timers.TIMER_B);
+  this.B = Timers.setTimeout(tr.timer_B.bind(tr), Timers.TIMER_B);
 
   if(!this.transport.send(this.request)) {
     this.onTransportError();
@@ -182,9 +185,9 @@ InviteClientTransaction.prototype.send = function() {
 
 InviteClientTransaction.prototype.onTransportError = function() {
   this.logger.log('transport error occurred, deleting INVITE client transaction ' + this.id);
-  SIP.Timers.clearTimeout(this.B);
-  SIP.Timers.clearTimeout(this.D);
-  SIP.Timers.clearTimeout(this.M);
+  Timers.clearTimeout(this.B);
+  Timers.clearTimeout(this.D);
+  Timers.clearTimeout(this.M);
   this.stateChanged(C.STATUS_TERMINATED);
   this.request_sender.ua.destroyTransaction(this);
 
@@ -198,7 +201,7 @@ InviteClientTransaction.prototype.timer_M = function() {
   this.logger.log('Timer M expired for INVITE client transaction ' + this.id);
 
   if(this.state === C.STATUS_ACCEPTED) {
-    SIP.Timers.clearTimeout(this.B);
+    Timers.clearTimeout(this.B);
     this.stateChanged(C.STATUS_TERMINATED);
     this.request_sender.ua.destroyTransaction(this);
   }
@@ -216,7 +219,7 @@ InviteClientTransaction.prototype.timer_B = function() {
 
 InviteClientTransaction.prototype.timer_D = function() {
   this.logger.log('Timer D expired for INVITE client transaction ' + this.id);
-  SIP.Timers.clearTimeout(this.B);
+  Timers.clearTimeout(this.B);
   this.stateChanged(C.STATUS_TERMINATED);
   this.request_sender.ua.destroyTransaction(this);
 };
@@ -237,7 +240,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
   this.ack += 'CSeq: ' + this.request.headers['CSeq'].toString().split(' ')[0];
   this.ack += ' ACK\r\n\r\n';
 
-  this.D = SIP.Timers.setTimeout(tr.timer_D.bind(tr), SIP.Timers.TIMER_D);
+  this.D = Timers.setTimeout(tr.timer_D.bind(tr), Timers.TIMER_D);
 
   this.transport.send(this.ack);
 };
@@ -245,7 +248,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
 InviteClientTransaction.prototype.cancel_request = function(tr, reason) {
   var request = tr.request;
 
-  this.cancel = SIP.C.CANCEL + ' ' + request.ruri + ' SIP/2.0\r\n';
+  this.cancel = C.CANCEL + ' ' + request.ruri + ' SIP/2.0\r\n';
   this.cancel += 'Via: ' + request.headers['Via'].toString() + '\r\n';
 
   if(this.request.headers['Route']) {
@@ -293,7 +296,7 @@ InviteClientTransaction.prototype.receiveResponse = function(response) {
       case C.STATUS_CALLING:
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_ACCEPTED);
-        this.M = SIP.Timers.setTimeout(tr.timer_M.bind(tr), SIP.Timers.TIMER_M);
+        this.M = Timers.setTimeout(tr.timer_M.bind(tr), Timers.TIMER_M);
         this.request_sender.receiveResponse(response);
         break;
       case C.STATUS_ACCEPTED:
@@ -317,11 +320,11 @@ InviteClientTransaction.prototype.receiveResponse = function(response) {
 
 
 /**
- * @augments SIP.Transactions
+ * @augments Transactions
  * @class ACK Client Transaction
- * @param {SIP.RequestSender} request_sender
- * @param {SIP.OutgoingRequest} request
- * @param {SIP.Transport} transport
+ * @param {RequestSender} request_sender
+ * @param {OutgoingRequest} request
+ * @param {Transport} transport
  */
 var AckClientTransaction = function(request_sender, request, transport) {
   var via;
@@ -338,7 +341,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
 
   this.request.setHeader('via', via);
 };
-AckClientTransaction.prototype = new SIP.EventEmitter();
+AckClientTransaction.prototype = new EventEmitter();
 
 AckClientTransaction.prototype.send = function() {
   if(!this.transport.send(this.request)) {
@@ -353,10 +356,10 @@ AckClientTransaction.prototype.onTransportError = function() {
 
 
 /**
-* @augments SIP.Transactions
+* @augments Transactions
 * @class Non Invite Server Transaction
-* @param {SIP.IncomingRequest} request
-* @param {SIP.UA} ua
+* @param {IncomingRequest} request
+* @param {UA} ua
 */
 var NonInviteServerTransaction = function(request, ua) {
   var events = ['stateChanged'];
@@ -377,7 +380,7 @@ var NonInviteServerTransaction = function(request, ua) {
 
   this.initEvents(events);
 };
-NonInviteServerTransaction.prototype = new SIP.EventEmitter();
+NonInviteServerTransaction.prototype = new EventEmitter();
 
 NonInviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -396,7 +399,7 @@ NonInviteServerTransaction.prototype.onTransportError = function() {
 
     this.logger.log('transport error occurred, deleting non-INVITE server transaction ' + this.id);
 
-    SIP.Timers.clearTimeout(this.J);
+    Timers.clearTimeout(this.J);
     this.stateChanged(C.STATUS_TERMINATED);
     this.ua.destroyTransaction(this);
   }
@@ -404,7 +407,7 @@ NonInviteServerTransaction.prototype.onTransportError = function() {
 
 NonInviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
-  var deferred = SIP.Utils.defer();
+  var deferred = Utils.defer();
 
   if(status_code === 100) {
     /* RFC 4320 4.1
@@ -435,7 +438,7 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_COMPLETED);
         this.last_response = response;
-        this.J = SIP.Timers.setTimeout(tr.timer_J.bind(tr), SIP.Timers.TIMER_J);
+        this.J = Timers.setTimeout(tr.timer_J.bind(tr), Timers.TIMER_J);
         if(!this.transport.send(response)) {
           this.onTransportError();
           deferred.reject();
@@ -452,10 +455,10 @@ NonInviteServerTransaction.prototype.receiveResponse = function(status_code, res
 };
 
 /**
-* @augments SIP.Transactions
+* @augments Transactions
 * @class Invite Server Transaction
-* @param {SIP.IncomingRequest} request
-* @param {SIP.UA} ua
+* @param {IncomingRequest} request
+* @param {UA} ua
 */
 var InviteServerTransaction = function(request, ua) {
   var events = ['stateChanged'];
@@ -480,7 +483,7 @@ var InviteServerTransaction = function(request, ua) {
 
   this.initEvents(events);
 };
-InviteServerTransaction.prototype = new SIP.EventEmitter();
+InviteServerTransaction.prototype = new EventEmitter();
 
 InviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -520,13 +523,13 @@ InviteServerTransaction.prototype.onTransportError = function() {
     this.logger.log('transport error occurred, deleting INVITE server transaction ' + this.id);
 
     if (this.resendProvisionalTimer !== null) {
-      SIP.Timers.clearInterval(this.resendProvisionalTimer);
+      Timers.clearInterval(this.resendProvisionalTimer);
       this.resendProvisionalTimer = null;
     }
 
-    SIP.Timers.clearTimeout(this.L);
-    SIP.Timers.clearTimeout(this.H);
-    SIP.Timers.clearTimeout(this.I);
+    Timers.clearTimeout(this.L);
+    Timers.clearTimeout(this.H);
+    Timers.clearTimeout(this.I);
 
     this.stateChanged(C.STATUS_TERMINATED);
     this.ua.destroyTransaction(this);
@@ -542,7 +545,7 @@ InviteServerTransaction.prototype.resend_provisional = function() {
 // INVITE Server Transaction RFC 3261 17.2.1
 InviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
-  var deferred = SIP.Utils.defer();
+  var deferred = Utils.defer();
 
   if(status_code >= 100 && status_code <= 199) {
     switch(this.state) {
@@ -558,18 +561,18 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
   if(status_code > 100 && status_code <= 199 && this.state === C.STATUS_PROCEEDING) {
     // Trigger the resendProvisionalTimer only for the first non 100 provisional response.
     if(this.resendProvisionalTimer === null) {
-      this.resendProvisionalTimer = SIP.Timers.setInterval(tr.resend_provisional.bind(tr),
-        SIP.Timers.PROVISIONAL_RESPONSE_INTERVAL);
+      this.resendProvisionalTimer = Timers.setInterval(tr.resend_provisional.bind(tr),
+        Timers.PROVISIONAL_RESPONSE_INTERVAL);
     }
   } else if(status_code >= 200 && status_code <= 299) {
     switch(this.state) {
       case C.STATUS_PROCEEDING:
         this.stateChanged(C.STATUS_ACCEPTED);
         this.last_response = response;
-        this.L = SIP.Timers.setTimeout(tr.timer_L.bind(tr), SIP.Timers.TIMER_L);
+        this.L = Timers.setTimeout(tr.timer_L.bind(tr), Timers.TIMER_L);
 
         if (this.resendProvisionalTimer !== null) {
-          SIP.Timers.clearInterval(this.resendProvisionalTimer);
+          Timers.clearInterval(this.resendProvisionalTimer);
           this.resendProvisionalTimer = null;
         }
         /* falls through */
@@ -587,7 +590,7 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
     switch(this.state) {
       case C.STATUS_PROCEEDING:
         if (this.resendProvisionalTimer !== null) {
-          SIP.Timers.clearInterval(this.resendProvisionalTimer);
+          Timers.clearInterval(this.resendProvisionalTimer);
           this.resendProvisionalTimer = null;
         }
 
@@ -596,7 +599,7 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
           deferred.reject();
         } else {
           this.stateChanged(C.STATUS_COMPLETED);
-          this.H = SIP.Timers.setTimeout(tr.timer_H.bind(tr), SIP.Timers.TIMER_H);
+          this.H = Timers.setTimeout(tr.timer_H.bind(tr), Timers.TIMER_H);
           deferred.resolve();
         }
         break;
@@ -608,8 +611,8 @@ InviteServerTransaction.prototype.receiveResponse = function(status_code, respon
 
 /**
  * @function
- * @param {SIP.UA} ua
- * @param {SIP.IncomingRequest} request
+ * @param {UA} ua
+ * @param {IncomingRequest} request
  *
  * @return {boolean}
  * INVITE:
@@ -633,7 +636,7 @@ var checkTransaction = function(ua, request) {
   var tr;
 
   switch(request.method) {
-    case SIP.C.INVITE:
+    case C.INVITE:
       tr = ua.transactions.ist[request.via_branch];
       if(tr) {
         switch(tr.state) {
@@ -649,7 +652,7 @@ var checkTransaction = function(ua, request) {
         return true;
       }
       break;
-    case SIP.C.ACK:
+    case C.ACK:
       tr = ua.transactions.ist[request.via_branch];
 
       // RFC 6026 7.1
@@ -658,7 +661,7 @@ var checkTransaction = function(ua, request) {
           return false;
         } else if(tr.state === C.STATUS_COMPLETED) {
           tr.state = C.STATUS_CONFIRMED;
-          tr.I = SIP.Timers.setTimeout(tr.timer_I.bind(tr), SIP.Timers.TIMER_I);
+          tr.I = Timers.setTimeout(tr.timer_I.bind(tr), Timers.TIMER_I);
           return true;
         }
       }
@@ -668,7 +671,7 @@ var checkTransaction = function(ua, request) {
         return false;
       }
       break;
-    case SIP.C.CANCEL:
+    case C.CANCEL:
       tr = ua.transactions.ist[request.via_branch];
       if(tr) {
         request.reply_sl(200);
@@ -701,7 +704,7 @@ var checkTransaction = function(ua, request) {
   }
 };
 
-return {
+module.exports = {
   C: C,
   checkTransaction: checkTransaction,
   NonInviteClientTransaction: NonInviteClientTransaction,
@@ -709,6 +712,4 @@ return {
   AckClientTransaction: AckClientTransaction,
   NonInviteServerTransaction: NonInviteServerTransaction,
   InviteServerTransaction: InviteServerTransaction
-};
-
 };

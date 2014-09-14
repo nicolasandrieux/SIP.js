@@ -1,23 +1,21 @@
-
 /**
  * @fileoverview In-Dialog Request Sender
  */
 
+var C = require('../Constants');
+var Transactions = require('../Transactions');
+var Timers = require('../Timers');
+var Session = require('../Session/Session');
+
 /**
- * @augments SIP.Dialog
+ * @augments Dialog
  * @class Class creating an In-dialog request sender.
- * @param {SIP.Dialog} dialog
+ * @param {Dialog} dialog
  * @param {Object} applicant
- * @param {SIP.OutgoingRequest} request
- */
-/**
- * @fileoverview in-Dialog Request Sender
+ * @param {OutgoingRequest} request
  */
 
-module.exports = function (SIP) {
-var RequestSender;
-
-RequestSender = function(dialog, applicant, request) {
+var RequestSender = module.exports = function(dialog, applicant, request) {
 
   this.dialog = dialog;
   this.applicant = applicant;
@@ -31,17 +29,17 @@ RequestSender = function(dialog, applicant, request) {
 RequestSender.prototype = {
   send: function() {
     var self = this,
-      request_sender = new SIP.RequestSender(this, this.dialog.owner.ua);
+      request_sender = new RequestSender(this, this.dialog.owner.ua);
 
       request_sender.send();
 
     // RFC3261 14.2 Modifying an Existing Session -UAC BEHAVIOR-
-    if (this.request.method === SIP.C.INVITE && request_sender.clientTransaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
+    if (this.request.method === C.INVITE && request_sender.clientTransaction.state !== Transactions.C.STATUS_TERMINATED) {
       this.dialog.uac_pending_reply = true;
       request_sender.clientTransaction.on('stateChanged', function stateChanged(){
-        if (this.state === SIP.Transactions.C.STATUS_ACCEPTED ||
-            this.state === SIP.Transactions.C.STATUS_COMPLETED ||
-            this.state === SIP.Transactions.C.STATUS_TERMINATED) {
+        if (this.state === Transactions.C.STATUS_ACCEPTED ||
+            this.state === Transactions.C.STATUS_COMPLETED ||
+            this.state === Transactions.C.STATUS_TERMINATED) {
 
           this.off('stateChanged', stateChanged);
           self.dialog.uac_pending_reply = false;
@@ -68,14 +66,14 @@ RequestSender.prototype = {
     // RFC3261 12.2.1.2 408 or 481 is received for a request within a dialog.
     if (response.status_code === 408 || response.status_code === 481) {
       this.applicant.onDialogError(response);
-    } else if (response.method === SIP.C.INVITE && response.status_code === 491) {
+    } else if (response.method === C.INVITE && response.status_code === 491) {
       if (this.reattempt) {
         this.applicant.receiveResponse(response);
       } else {
         this.request.cseq.value = this.dialog.local_seqnum += 1;
-        this.reattemptTimer = SIP.Timers.setTimeout(
+        this.reattemptTimer = Timers.setTimeout(
           function() {
-            if (self.applicant.owner.status !== SIP.Session.C.STATUS_TERMINATED) {
+            if (self.applicant.owner.status !== Session.C.STATUS_TERMINATED) {
               self.reattempt = true;
               self.request_sender.send();
             }
@@ -87,7 +85,4 @@ RequestSender.prototype = {
       this.applicant.receiveResponse(response);
     }
   }
-};
-
-return RequestSender;
 };

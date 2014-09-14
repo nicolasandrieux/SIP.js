@@ -2,23 +2,23 @@
  * @fileoverview SIP NameAddrHeader
  */
 
+var URI = require('./URI');
+var Grammar = require('./Grammar/dist/Grammar');
+
 /**
  * @augments SIP
  * @class Class creating a Name Address SIP header.
  *
- * @param {SIP.URI} uri
+ * @param {URI} uri
  * @param {String} [displayName]
  * @param {Object} [parameters]
  *
  */
-module.exports = function (SIP) {
-var NameAddrHeader;
-
-NameAddrHeader = function(uri, displayName, parameters) {
+var NameAddrHeader = module.exports = function(uri, displayName, parameters) {
   var param;
 
   // Checks
-  if(!uri || !(uri instanceof SIP.URI)) {
+  if(!uri || !(uri instanceof URI)) {
     throw new TypeError('missing or invalid "uri" parameter');
   }
 
@@ -45,10 +45,10 @@ NameAddrHeader.prototype = {
       this.parameters[key.toLowerCase()] = (typeof value === 'undefined' || value === null) ? null : value.toString();
     }
   },
-  getParam: SIP.URI.prototype.getParam,
-  hasParam: SIP.URI.prototype.hasParam,
-  deleteParam: SIP.URI.prototype.deleteParam,
-  clearParams: SIP.URI.prototype.clearParams,
+  getParam: URI.prototype.getParam,
+  hasParam: URI.prototype.hasParam,
+  deleteParam: URI.prototype.deleteParam,
+  clearParams: URI.prototype.clearParams,
 
   clone: function() {
     return new NameAddrHeader(
@@ -77,20 +77,17 @@ NameAddrHeader.prototype = {
 
 
 /**
-  * Parse the given string and returns a SIP.NameAddrHeader instance or undefined if
+  * Parse the given string and returns a NameAddrHeader instance or undefined if
   * it is an invalid NameAddrHeader.
   * @public
   * @param {String} name_addr_header
   */
 NameAddrHeader.parse = function(name_addr_header) {
-  name_addr_header = SIP.Grammar.parse(name_addr_header,'Name_Addr_Header');
+  name_addr_header = Grammar.parse(name_addr_header,'Name_Addr_Header');
 
   if (name_addr_header !== -1) {
     return name_addr_header;
   } else {
     return undefined;
   }
-};
-
-return NameAddrHeader;
 };

@@ -3,16 +3,17 @@
  * @fileoverview Request Sender
  */
 
+var UA = require('./UA');
+var C = require('./Constants');
+var Transactions = require('./Transactions');
+
 /**
  * @augments SIP
  * @class Class creating a request sender.
  * @param {Object} applicant
- * @param {SIP.UA} ua
+ * @param {UA} ua
  */
-module.exports = function (SIP) {
-var RequestSender;
-
-RequestSender = function(applicant, ua) {
+var RequestSender = module.exports = function(applicant, ua) {
   this.logger = ua.getLogger('sip.requestsender');
   this.ua = ua;
   this.applicant = applicant;
@@ -23,7 +24,7 @@ RequestSender = function(applicant, ua) {
   this.staled = false;
 
   // If ua is in closing process or even closed just allow sending Bye and ACK
-  if (ua.status === SIP.UA.C.STATUS_USER_CLOSED && (this.method !== SIP.C.BYE || this.method !== SIP.C.ACK)) {
+  if (ua.status === UA.C.STATUS_USER_CLOSED && (this.method !== C.BYE || this.method !== C.ACK)) {
     this.onTransportError();
   }
 };
@@ -35,13 +36,13 @@ RequestSender.prototype = {
   send: function() {
     switch(this.method) {
       case "INVITE":
-        this.clientTransaction = new SIP.Transactions.InviteClientTransaction(this, this.request, this.ua.transport);
+        this.clientTransaction = new Transactions.InviteClientTransaction(this, this.request, this.ua.transport);
         break;
       case "ACK":
-        this.clientTransaction = new SIP.Transactions.AckClientTransaction(this, this.request, this.ua.transport);
+        this.clientTransaction = new Transactions.AckClientTransaction(this, this.request, this.ua.transport);
         break;
       default:
-        this.clientTransaction = new SIP.Transactions.NonInviteClientTransaction(this, this.request, this.ua.transport);
+        this.clientTransaction = new Transactions.NonInviteClientTransaction(this, this.request, this.ua.transport);
     }
     this.clientTransaction.send();
 
@@ -69,7 +70,7 @@ RequestSender.prototype = {
   /**
   * Called from client transaction when receiving a correct response to the request.
   * Authenticate request if needed or pass the response back to the applicant.
-  * @param {SIP.IncomingResponse} response
+  * @param {IncomingResponse} response
   */
   receiveResponse: function(response) {
     var cseq, challenge, authorization_header_name,
@@ -113,7 +114,7 @@ RequestSender.prototype = {
           this.staled = true;
         }
 
-        if (response.method === SIP.C.REGISTER) {
+        if (response.method === C.REGISTER) {
           cseq = this.applicant.cseq += 1;
         } else if (this.request.dialog){
           cseq = this.request.dialog.local_seqnum += 1;
@@ -132,7 +133,4 @@ RequestSender.prototype = {
       this.applicant.receiveResponse(response);
     }
   }
-};
-
-return RequestSender;
 };

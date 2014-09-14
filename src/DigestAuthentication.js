@@ -5,9 +5,9 @@
 
 /**
  * SIP Digest Authentication.
- * @augments SIP.
+ * @augments
  * @function Digest Authentication
- * @param {SIP.UA} ua
+ * @param {UA} ua
  */
 module.exports = function (Utils) {
 var DigestAuthentication;
@@ -28,7 +28,7 @@ DigestAuthentication = function(ua) {
 * received in a response to that request.
 * Returns true if credentials were successfully generated, false otherwise.
 *
-* @param {SIP.OutgoingRequest} request
+* @param {OutgoingRequest} request
 * @param {Object} challenge
 */
 DigestAuthentication.prototype.authenticate = function(request, challenge) {

@@ -1,3 +1,8 @@
+var RequestSender = require('./Dialog/RequestSender');
+var IncomingResponse = require('./SIPMessage/IncomingResponse');
+var OutgoingRequest = require('./SIPMessage/OutgoingRequest');
+var Transactions = require('./Transactions');
+
 /**
  * @fileoverview SIP Dialog
  */
@@ -5,14 +10,11 @@
 /**
  * @augments SIP
  * @class Class creating a SIP dialog.
- * @param {SIP.RTCSession} owner
- * @param {SIP.IncomingRequest|SIP.IncomingResponse} message
+ * @param {RTCSession} owner
+ * @param {IncomingRequest|IncomingResponse} message
  * @param {Enum} type UAC / UAS
- * @param {Enum} state SIP.Dialog.C.STATUS_EARLY / SIP.Dialog.C.STATUS_CONFIRMED
+ * @param {Enum} state Dialog.C.STATUS_EARLY / Dialog.C.STATUS_CONFIRMED
  */
-module.exports = function (SIP) {
-
-var RequestSender = require('./Dialog/RequestSender')(SIP);
 
 var Dialog,
   C = {
@@ -22,7 +24,7 @@ var Dialog,
   };
 
 // RFC 3261 12.1
-Dialog = function(owner, message, type, state) {
+Dialog = module.exports = function(owner, message, type, state) {
   var contact;
 
   this.uac_pending_reply = false;
@@ -34,7 +36,7 @@ Dialog = function(owner, message, type, state) {
     };
   }
 
-  if(message instanceof SIP.IncomingResponse) {
+  if(message instanceof IncomingResponse) {
     state = (message.status_code < 200) ? C.STATUS_EARLY : C.STATUS_CONFIRMED;
   } else {
     // Create confirmed dialog if state is not defined
@@ -95,7 +97,7 @@ Dialog = function(owner, message, type, state) {
 
 Dialog.prototype = {
   /**
-   * @param {SIP.IncomingMessage} message
+   * @param {IncomingMessage} message
    * @param {Enum} UAC/UAS
    */
   update: function(message, type) {
@@ -120,7 +122,7 @@ Dialog.prototype = {
   /**
   * @param {String} method request method
   * @param {Object} extraHeaders extra headers
-  * @returns {SIP.OutgoingRequest}
+  * @returns {OutgoingRequest}
   */
 
   // RFC 3261 12.2.1.1
@@ -130,9 +132,9 @@ Dialog.prototype = {
 
     if(!this.local_seqnum) { this.local_seqnum = Math.floor(Math.random() * 10000); }
 
-    cseq = (method === SIP.C.CANCEL || method === SIP.C.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
+    cseq = (method === C.CANCEL || method === C.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
 
-    request = new SIP.OutgoingRequest(
+    request = new OutgoingRequest(
       method,
       this.remote_target,
       this.owner.ua, {
@@ -151,7 +153,7 @@ Dialog.prototype = {
   },
 
   /**
-  * @param {SIP.IncomingRequest} request
+  * @param {IncomingRequest} request
   * @returns {Boolean}
   */
 
@@ -163,7 +165,7 @@ Dialog.prototype = {
       this.remote_seqnum = request.cseq;
     } else if(request.cseq < this.remote_seqnum) {
         //Do not try to reply to an ACK request.
-        if (request.method !== SIP.C.ACK) {
+        if (request.method !== C.ACK) {
           request.reply(500);
         }
         if (request.cseq === this.invite_seqnum) {
@@ -176,7 +178,7 @@ Dialog.prototype = {
 
     switch(request.method) {
       // RFC3261 14.2 Modifying an Existing Session -UAS BEHAVIOR-
-      case SIP.C.INVITE:
+      case C.INVITE:
         if (this.uac_pending_reply === true) {
           request.reply(491);
         } else if (this.uas_pending_reply === true) {
@@ -186,9 +188,9 @@ Dialog.prototype = {
         } else {
           this.uas_pending_reply = true;
           request.server_transaction.on('stateChanged', function stateChanged(){
-            if (this.state === SIP.Transactions.C.STATUS_ACCEPTED ||
-                this.state === SIP.Transactions.C.STATUS_COMPLETED ||
-                this.state === SIP.Transactions.C.STATUS_TERMINATED) {
+            if (this.state === Transactions.C.STATUS_ACCEPTED ||
+                this.state === Transactions.C.STATUS_COMPLETED ||
+                this.state === Transactions.C.STATUS_TERMINATED) {
 
               this.off('stateChanged', stateChanged);
               self.uas_pending_reply = false;
@@ -203,17 +205,17 @@ Dialog.prototype = {
         // RFC3261 12.2.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
           request.server_transaction.on('stateChanged', function(){
-            if (this.state === SIP.Transactions.C.STATUS_ACCEPTED) {
+            if (this.state === Transactions.C.STATUS_ACCEPTED) {
               self.remote_target = request.parseHeader('contact').uri;
             }
           });
         }
         break;
-      case SIP.C.NOTIFY:
+      case C.NOTIFY:
         // RFC6665 3.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
           request.server_transaction.on('stateChanged', function(){
-            if (this.state === SIP.Transactions.C.STATUS_COMPLETED) {
+            if (this.state === Transactions.C.STATUS_COMPLETED) {
               self.remote_target = request.parseHeader('contact').uri;
             }
           });
@@ -239,7 +241,7 @@ Dialog.prototype = {
   },
 
   /**
-  * @param {SIP.IncomingRequest} request
+  * @param {IncomingRequest} request
   */
   receiveRequest: function(request) {
     //Check in-dialog request
@@ -252,5 +254,3 @@ Dialog.prototype = {
 };
 
 Dialog.C = C;
-return Dialog;
-};

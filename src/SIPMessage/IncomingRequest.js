@@ -1,12 +1,13 @@
+var IncomingMessage = require('./IncomingMessage');
+var Utils = require('../Utils');
+var C = require('../Constants');
+
 /**
  * @augments IncomingMessage
  * @class Class for incoming SIP request.
  */
-module.exports = function (SIP) {
 
-var IncomingMessage = require('./IncomingMessage')(SIP);
-
-var IncomingRequest = function(ua) {
+var IncomingRequest = module.exports = function(ua) {
   this.logger = ua.getLogger('sip.sipmessage');
   this.ua = ua;
   this.headers = {};
@@ -32,10 +33,10 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     r = 0,
     v = 0;
 
-  response = SIP.Utils.buildStatusLine(code, reason);
+  response = Utils.buildStatusLine(code, reason);
   extraHeaders = (extraHeaders || []).slice();
 
-  if(this.method === SIP.C.INVITE && code > 100 && code <= 200) {
+  if(this.method === C.INVITE && code > 100 && code <= 200) {
     rr = this.getHeaders('record-route');
     length = rr.length;
 
@@ -52,7 +53,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   if(!this.to_tag && code > 100) {
-    to += ';tag=' + SIP.Utils.newTag();
+    to += ';tag=' + Utils.newTag();
   } else if(this.to_tag && !this.s('to').hasParam('tag')) {
     to += ';tag=' + this.to_tag;
   }
@@ -68,12 +69,12 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   //Supported
-  if (this.method === SIP.C.INVITE &&
+  if (this.method === C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
     supported.push('gruu');
   }
 
-  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+  if (this.ua.configuration.rel100 === C.supported.SUPPORTED) {
     supported.push('100rel');
   }
 
@@ -82,7 +83,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   response += 'Supported: ' + supported + '\r\n';
 
   if(body) {
-    length = SIP.Utils.str_utf8_length(body);
+    length = Utils.str_utf8_length(body);
     response += 'Content-Type: application/sdp\r\n';
     response += 'Content-Length: ' + length + '\r\n\r\n';
     response += body;
@@ -106,7 +107,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
     vias = this.getHeaders('via'),
     length = vias.length;
 
-  response = SIP.Utils.buildStatusLine(code, reason);
+  response = Utils.buildStatusLine(code, reason);
 
   for(v; v < length; v++) {
     response += 'Via: ' + vias[v] + '\r\n';
@@ -115,7 +116,7 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
   to = this.getHeader('To');
 
   if(!this.to_tag && code > 100) {
-    to += ';tag=' + SIP.Utils.newTag();
+    to += ';tag=' + Utils.newTag();
   } else if(this.to_tag && !this.s('to').hasParam('tag')) {
     to += ';tag=' + this.to_tag;
   }
@@ -127,8 +128,4 @@ IncomingRequest.prototype.reply_sl = function(code, reason) {
   response += 'Content-Length: ' + 0 + '\r\n\r\n';
 
   this.transport.send(response);
-};
-
-return IncomingRequest;
-
 };

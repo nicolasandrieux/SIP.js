@@ -1,14 +1,22 @@
+var DTMF = require('./DTMF');
 var C = require('./Constants');
-
-module.exports = function (SIP) {
-
-var DTMF = require('./DTMF')(SIP);
+var Hacks = require('../Hacks');
+var Exceptions = require('../Exceptions');
+var Utils = require('../Utils');
+var WebRTC = require('../WebRTC');
+var Timers = require('../Timers');
+var InviteServerContext = require('./InviteServerContext');
+var InviteClientContext = require('./InviteClientContext');
+var Grammar = require('../Grammar/dist/Grammar');
+var OutgoingRequest = require('../SIPMessage/OutgoingRequest');
+var RequestSender = require('../RequestSender');
+var Dialog = require('../Dialogs');
 
 /*
- * @param {function returning SIP.MediaHandler} [mediaHandlerFactory]
+ * @param {function returning MediaHandler} [mediaHandlerFactory]
  *        (See the documentation for the mediaHandlerFactory argument of the UA constructor.)
  */
-var Session = function (mediaHandlerFactory) {
+var Session = module.exports = function (mediaHandlerFactory) {
   var events = [
   'connecting',
   'terminated',
@@ -26,7 +34,7 @@ var Session = function (mediaHandlerFactory) {
   this.status = C.STATUS_NULL;
   this.dialog = null;
   this.earlyDialogs = {};
-  this.mediaHandlerFactory = mediaHandlerFactory || SIP.WebRTC.MediaHandler.defaultFactory;
+  this.mediaHandlerFactory = mediaHandlerFactory || WebRTC.MediaHandler.defaultFactory;
   // this.mediaHandler gets set by ICC/ISC constructors
   this.hasOffer = false;
   this.hasAnswer = false;
@@ -96,7 +104,7 @@ var Session = function (mediaHandlerFactory) {
    };
 
   this.early_sdp = null;
-  this.rel100 = SIP.C.supported.UNSUPPORTED;
+  this.rel100 = C.supported.UNSUPPORTED;
 
   this.initMoreEvents(events);
 };
@@ -114,7 +122,7 @@ Session.prototype = {
 
     // Check Session Status
     if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_WAITING_FOR_ACK) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     // Check tones
@@ -152,7 +160,7 @@ Session.prototype = {
       }
 
       // Set timeout for the next tone
-      SIP.Timers.setTimeout(sendDTMF, timeout);
+      Timers.setTimeout(sendDTMF, timeout);
     };
 
     this.tones = dtmfs;
@@ -179,7 +187,7 @@ Session.prototype = {
     options.receiveResponse = function () {};
 
     return this.
-      sendRequest(SIP.C.BYE, options).
+      sendRequest(C.BYE, options).
       terminated();
   },
 
@@ -190,24 +198,24 @@ Session.prototype = {
 
     if (target === undefined) {
       throw new TypeError('Not enough arguments');
-    } else if (target instanceof SIP.InviteServerContext || target instanceof SIP.InviteClientContext) {
+    } else if (target instanceof InviteServerContext || target instanceof InviteClientContext) {
       //Attended Transfer
       // B.transfer(C)
       extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+      extraHeaders.push('Allow: '+ Utils.getAllowedMethods(this.ua));
       extraHeaders.push('Refer-To: <' + target.dialog.remote_target.toString() + '?Replaces=' + target.dialog.id.call_id + '%3Bto-tag%3D' + target.dialog.id.remote_tag + '%3Bfrom-tag%3D' + target.dialog.id.local_tag + '>');
     } else {
       //Blind Transfer
 
       // Check Session Status
       if (this.status !== C.STATUS_CONFIRMED) {
-        throw new SIP.Exceptions.InvalidStateError(this.status);
+        throw new Exceptions.InvalidStateError(this.status);
       }
 
-      // normalizeTarget allows instances of SIP.URI to pass through unaltered,
+      // normalizeTarget allows instances of URI to pass through unaltered,
       // so try to make one ahead of time
       try {
-        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
+        target = Grammar.parse(target, 'Refer_To').uri || target;
       } catch (e) {
         this.logger.debug(".refer() cannot parse Refer_To from", target);
         this.logger.debug("...falling through to normalizeTarget()");
@@ -220,12 +228,12 @@ Session.prototype = {
       }
 
       extraHeaders.push('Contact: '+ this.contact);
-      extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+      extraHeaders.push('Allow: '+ Utils.getAllowedMethods(this.ua));
       extraHeaders.push('Refer-To: '+ target);
     }
 
     // Send the request
-    this.sendRequest(SIP.C.REFER, {
+    this.sendRequest(C.REFER, {
       extraHeaders: extraHeaders,
       body: options.body,
       receiveResponse: function() {}
@@ -251,7 +259,7 @@ Session.prototype = {
         return;
       }
 
-      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+      Hacks.Chrome.getsConfusedAboutGUM(this);
 
       /*
         Harmless race condition.  Both sides of REFER
@@ -271,7 +279,7 @@ Session.prototype = {
     options = options || {};
     var self = this;
 
-    var request = new SIP.OutgoingRequest(
+    var request = new OutgoingRequest(
       method,
       this.dialog.remote_target,
       this.ua,
@@ -290,7 +298,7 @@ Session.prototype = {
       options.body
     );
 
-    new SIP.RequestSender({
+    new RequestSender({
       request: request,
       onRequestTimeout: function() {
         self.onRequestTimeout();
@@ -329,7 +337,7 @@ Session.prototype = {
 
     // Clear session timers
     for(idx in this.timers) {
-      SIP.Timers.clearTimeout(this.timers[idx]);
+      Timers.clearTimeout(this.timers[idx]);
     }
 
     // Terminate dialogs
@@ -365,12 +373,12 @@ Session.prototype = {
       if (early_dialog) {
         return true;
       } else {
-        early_dialog = new SIP.Dialog(this, message, type, SIP.Dialog.C.STATUS_EARLY);
+        early_dialog = new Dialog(this, message, type, Dialog.C.STATUS_EARLY);
 
         // Dialog has been successfully created.
         if(early_dialog.error) {
           this.logger.error(early_dialog.error);
-          this.failed(message, SIP.C.causes.INTERNAL_ERROR);
+          this.failed(message, C.causes.INTERNAL_ERROR);
           return false;
         } else {
           this.earlyDialogs[id] = early_dialog;
@@ -393,11 +401,11 @@ Session.prototype = {
       }
 
       // Otherwise, create a _confirmed_ dialog
-      dialog = new SIP.Dialog(this, message, type);
+      dialog = new Dialog(this, message, type);
 
       if(dialog.error) {
         this.logger.error(dialog.error);
-        this.failed(message, SIP.C.causes.INTERNAL_ERROR);
+        this.failed(message, C.causes.INTERNAL_ERROR);
         return false;
       } else {
         this.to_tag = message.to_tag;
@@ -444,7 +452,7 @@ Session.prototype = {
   hold: function() {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.mediaHandler.hold();
@@ -490,7 +498,7 @@ Session.prototype = {
   unhold: function() {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.mediaHandler.unhold();
@@ -563,7 +571,7 @@ Session.prototype = {
     })
     .catch(function onFailure (e) {
       var statusCode;
-      if (e instanceof SIP.Exceptions.GetDescriptionError) {
+      if (e instanceof Exceptions.GetDescriptionError) {
         statusCode = 500;
       } else {
         self.logger.error(e);
@@ -586,8 +594,8 @@ Session.prototype = {
       this.reinviteSucceeded = eventHandlers.succeeded;
     } else {
       this.reinviteSucceeded = function(){
-        SIP.Timers.clearTimeout(self.timers.ackTimer);
-        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
+        Timers.clearTimeout(self.timers.ackTimer);
+        Timers.clearTimeout(self.timers.invite2xxTimer);
         self.status = C.STATUS_CONFIRMED;
       };
     }
@@ -598,7 +606,7 @@ Session.prototype = {
     }
 
     extraHeaders.push('Contact: ' + this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ Utils.getAllowedMethods(this.ua));
     extraHeaders.push('Content-Type: application/sdp');
 
     this.receiveResponse = this.receiveReinviteResponse;
@@ -607,7 +615,7 @@ Session.prototype = {
     .then(mangle)
     .then(
       function(body){
-        self.dialog.sendRequest(self, SIP.C.INVITE, {
+        self.dialog.sendRequest(self, C.INVITE, {
           extraHeaders: extraHeaders,
           body: body
         });
@@ -623,14 +631,14 @@ Session.prototype = {
 
   receiveRequest: function (request) {
     switch (request.method) {
-      case SIP.C.BYE:
+      case C.BYE:
         request.reply(200);
         if(this.status === C.STATUS_CONFIRMED) {
           this.emit('bye', request);
-          this.terminated(request, SIP.C.causes.BYE);
+          this.terminated(request, C.causes.BYE);
         }
         break;
-      case SIP.C.INVITE:
+      case C.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
           // Switch these two lines to try re-INVITEs:
@@ -638,7 +646,7 @@ Session.prototype = {
           request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
         }
         break;
-      case SIP.C.INFO:
+      case C.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
           var body, tone, duration,
               contentType = request.getHeader('content-type'),
@@ -666,7 +674,7 @@ Session.prototype = {
           }
         }
         break;
-      case SIP.C.REFER:
+      case C.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
@@ -678,7 +686,7 @@ Session.prototype = {
               'SIP/2.0 603 Declined'
           ;
 
-          this.sendRequest(SIP.C.NOTIFY, {
+          this.sendRequest(C.NOTIFY, {
             extraHeaders:[
               'Event: refer',
               'Subscription-State: terminated',
@@ -714,7 +722,7 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
-        this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
+        this.sendRequest(C.ACK,{cseq:response.cseq});
 
         if(!response.body) {
           this.reinviteFailed();
@@ -744,13 +752,13 @@ Session.prototype = {
     var extraHeaders = [];
 
     if (status_code) {
-      extraHeaders.push('Reason: ' + SIP.Utils.getReasonHeaderValue(status_code, reason_phrase));
+      extraHeaders.push('Reason: ' + Utils.getReasonHeaderValue(status_code, reason_phrase));
     }
 
     // An error on dialog creation will fire 'failed' event
     if (this.dialog || this.createDialog(response, 'UAC')) {
-      this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
-      this.sendRequest(SIP.C.BYE, {
+      this.sendRequest(C.ACK,{cseq: response.cseq});
+      this.sendRequest(C.BYE, {
         extraHeaders: extraHeaders
       });
     }
@@ -765,9 +773,9 @@ Session.prototype = {
    */
   setInvite2xxTimer: function(request, body) {
     var self = this,
-        timeout = SIP.Timers.T1;
+        timeout = Timers.T1;
 
-    this.timers.invite2xxTimer = SIP.Timers.setTimeout(function invite2xxRetransmission() {
+    this.timers.invite2xxTimer = Timers.setTimeout(function invite2xxRetransmission() {
       if (self.status !== C.STATUS_WAITING_FOR_ACK) {
         return;
       }
@@ -776,9 +784,9 @@ Session.prototype = {
 
       request.reply(200, null, ['Contact: ' + self.contact], body);
 
-      timeout = Math.min(timeout * 2, SIP.Timers.T2);
+      timeout = Math.min(timeout * 2, Timers.T2);
 
-      self.timers.invite2xxTimer = SIP.Timers.setTimeout(invite2xxRetransmission, timeout);
+      self.timers.invite2xxTimer = Timers.setTimeout(invite2xxRetransmission, timeout);
     }, timeout);
   },
 
@@ -790,14 +798,14 @@ Session.prototype = {
   setACKTimer: function() {
     var self = this;
 
-    this.timers.ackTimer = SIP.Timers.setTimeout(function() {
+    this.timers.ackTimer = Timers.setTimeout(function() {
       if(self.status === C.STATUS_WAITING_FOR_ACK) {
         self.logger.log('no ACK received for an extended period of time, terminating the call');
-        SIP.Timers.clearTimeout(self.timers.invite2xxTimer);
-        self.sendRequest(SIP.C.BYE);
-        self.terminated(null, SIP.C.causes.NO_ACK);
+        Timers.clearTimeout(self.timers.invite2xxTimer);
+        self.sendRequest(C.BYE);
+        self.terminated(null, C.causes.NO_ACK);
       }
-    }, SIP.Timers.TIMER_H);
+    }, Timers.TIMER_H);
   },
 
   /*
@@ -815,25 +823,25 @@ Session.prototype = {
 
   onTransportError: function() {
     if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
+      this.terminated(null, C.causes.CONNECTION_ERROR);
     } else if (this.status !== C.STATUS_TERMINATED) {
-      this.failed(null, SIP.C.causes.CONNECTION_ERROR);
+      this.failed(null, C.causes.CONNECTION_ERROR);
     }
   },
 
   onRequestTimeout: function() {
     if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.terminated(null, C.causes.REQUEST_TIMEOUT);
     } else if (this.status !== C.STATUS_TERMINATED) {
-      this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.failed(null, C.causes.REQUEST_TIMEOUT);
     }
   },
 
   onDialogError: function(response) {
     if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(response, SIP.C.causes.DIALOG_ERROR);
+      this.terminated(response, C.causes.DIALOG_ERROR);
     } else if (this.status !== C.STATUS_TERMINATED) {
-      this.failed(response, SIP.C.causes.DIALOG_ERROR);
+      this.failed(response, C.causes.DIALOG_ERROR);
     }
   },
 
@@ -892,7 +900,7 @@ Session.prototype = {
   },
 
   accepted: function(response, cause) {
-    cause = SIP.Utils.getReasonPhrase(response && response.status_code, cause);
+    cause = Utils.getReasonPhrase(response && response.status_code, cause);
 
     this.startTime = new Date();
 
@@ -915,6 +923,3 @@ Session.prototype = {
 };
 
 Session.C = C;
-return Session;
-
-};

@@ -2,16 +2,20 @@
  * @fileoverview Incoming SIP Message Sanity Check
  */
 
+var Utils = require('./Utils');
+var C = require('./Constants');
+var IncomingRequest = require('./SIPMessage/IncomingRequest');
+var IncomingResponse = require('./SIPMessage/IncomingResponse');
+
 /**
  * SIP message sanity check.
  * @augments SIP
  * @function
- * @param {SIP.IncomingMessage} message
- * @param {SIP.UA} ua
- * @param {SIP.Transport} transport
+ * @param {IncomingMessage} message
+ * @param {UA} ua
+ * @param {Transport} transport
  * @returns {Boolean}
  */
-module.exports = function (SIP) {
 var sanityCheck,
  logger,
  message, ua, transport,
@@ -39,6 +43,33 @@ var sanityCheck,
  *  - Minimum headers in a SIP message
  */
 
+// Reply
+function reply(status_code) {
+  var to,
+    response = Utils.buildStatusLine(status_code),
+    vias = message.getHeaders('via'),
+    length = vias.length,
+    idx = 0;
+
+  for(idx; idx < length; idx++) {
+    response += "Via: " + vias[idx] + "\r\n";
+  }
+
+  to = message.getHeader('To');
+
+  if(!message.to_tag) {
+    to += ';tag=' + Utils.newTag();
+  }
+
+  response += "To: " + to + "\r\n";
+  response += "From: " + message.getHeader('From') + "\r\n";
+  response += "Call-ID: " + message.call_id + "\r\n";
+  response += "CSeq: " + message.cseq + " " + message.method + "\r\n";
+  response += "\r\n";
+
+  transport.send(response);
+}
+
 // Sanity Check functions for requests
 function rfc3261_8_2_2_1() {
   if(!message.ruri || message.ruri.scheme !== 'sip') {
@@ -57,7 +88,7 @@ function rfc3261_16_3_4() {
 }
 
 function rfc3261_18_3_request() {
-  var len = SIP.Utils.str_utf8_length(message.body),
+  var len = Utils.str_utf8_length(message.body),
   contentLength = message.getHeader('content-length');
 
   if(len < contentLength) {
@@ -73,7 +104,7 @@ function rfc3261_8_2_2_2() {
     cseq = message.cseq;
 
   if(!message.to_tag) {
-    if(message.method === SIP.C.INVITE) {
+    if(message.method === C.INVITE) {
       tr = ua.transactions.ist[message.via_branch];
       if(tr) {
         return;
@@ -121,7 +152,7 @@ function rfc3261_18_1_2() {
 
 function rfc3261_18_3_response() {
   var
-    len = SIP.Utils.str_utf8_length(message.body),
+    len = Utils.str_utf8_length(message.body),
     contentLength = message.getHeader('content-length');
 
     if(len < contentLength) {
@@ -144,33 +175,6 @@ function minimumHeaders() {
   }
 }
 
-// Reply
-function reply(status_code) {
-  var to,
-    response = SIP.Utils.buildStatusLine(status_code),
-    vias = message.getHeaders('via'),
-    length = vias.length,
-    idx = 0;
-
-  for(idx; idx < length; idx++) {
-    response += "Via: " + vias[idx] + "\r\n";
-  }
-
-  to = message.getHeader('To');
-
-  if(!message.to_tag) {
-    to += ';tag=' + SIP.Utils.newTag();
-  }
-
-  response += "To: " + to + "\r\n";
-  response += "From: " + message.getHeader('From') + "\r\n";
-  response += "Call-ID: " + message.call_id + "\r\n";
-  response += "CSeq: " + message.cseq + " " + message.method + "\r\n";
-  response += "\r\n";
-
-  transport.send(response);
-}
-
 requests.push(rfc3261_8_2_2_1);
 requests.push(rfc3261_16_3_4);
 requests.push(rfc3261_18_3_request);
@@ -182,7 +186,7 @@ responses.push(rfc3261_18_3_response);
 
 all.push(minimumHeaders);
 
-sanityCheck = function(m, u, t) {
+sanityCheck = module.exports = function(m, u, t) {
   var len, pass;
 
   message = m;
@@ -199,7 +203,7 @@ sanityCheck = function(m, u, t) {
     }
   }
 
-  if(message instanceof SIP.IncomingRequest) {
+  if(message instanceof IncomingRequest) {
     len = requests.length;
     while(len--) {
       pass = requests[len](message);
@@ -209,7 +213,7 @@ sanityCheck = function(m, u, t) {
     }
   }
 
-  else if(message instanceof SIP.IncomingResponse) {
+  else if(message instanceof IncomingResponse) {
     len = responses.length;
     while(len--) {
       pass = responses[len](message);
@@ -221,7 +225,4 @@ sanityCheck = function(m, u, t) {
 
   //Everything is OK
   return true;
-};
-
-return sanityCheck;
 };

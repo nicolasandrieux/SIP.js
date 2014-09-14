@@ -2,12 +2,15 @@
  * @fileoverview SIP Message Parser
  */
 
+var Grammar = require('./Grammar/dist/Grammar');
+var IncomingResponse = require('./SIPMessage/IncomingResponse');
+var IncomingRequest = require('./SIPMessage/IncomingRequest');
+
 /**
  * Extract and parse every header of a SIP message.
  * @augments SIP
  * @namespace
  */
-module.exports = function (SIP) {
 var Parser;
 
 function getHeader(data, headerStart) {
@@ -84,7 +87,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       }
       break;
     case 'record-route':
-      parsed = SIP.Grammar.parse(headerValue, 'Record_Route');
+      parsed = Grammar.parse(headerValue, 'Record_Route');
 
       if (parsed === -1) {
         parsed = undefined;
@@ -107,7 +110,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       break;
     case 'contact':
     case 'm':
-      parsed = SIP.Grammar.parse(headerValue, 'Contact');
+      parsed = Grammar.parse(headerValue, 'Contact');
 
       if (parsed === -1) {
         parsed = undefined;
@@ -136,7 +139,7 @@ function parseHeader(message, data, headerStart, headerEnd) {
       if(parsed) {
         message.cseq = parsed.value;
       }
-      if(message instanceof SIP.IncomingResponse) {
+      if(message instanceof IncomingResponse) {
         message.method = parsed.method;
       }
       break;
@@ -179,9 +182,9 @@ function parseHeader(message, data, headerStart, headerEnd) {
  * @function
  * @param {String} message SIP message.
  * @param {Object} logger object.
- * @returns {SIP.IncomingRequest|SIP.IncomingResponse|undefined}
+ * @returns {IncomingRequest|IncomingResponse|undefined}
  */
-Parser = {};
+Parser = module.exports = {};
 Parser.parseMessage = function(data, ua) {
   var message, firstLine, contentLength, bodyStart, parsed,
     headerStart = 0,
@@ -195,17 +198,17 @@ Parser.parseMessage = function(data, ua) {
 
   // Parse first line. Check if it is a Request or a Reply.
   firstLine = data.substring(0, headerEnd);
-  parsed = SIP.Grammar.parse(firstLine, 'Request_Response');
+  parsed = Grammar.parse(firstLine, 'Request_Response');
 
   if(parsed === -1) {
     logger.warn('error parsing first line of SIP message: "' + firstLine + '"');
     return;
   } else if(!parsed.status_code) {
-    message = new SIP.IncomingRequest(ua);
+    message = new IncomingRequest(ua);
     message.method = parsed.method;
     message.ruri = parsed.uri;
   } else {
-    message = new SIP.IncomingResponse(ua);
+    message = new IncomingResponse(ua);
     message.status_code = parsed.status_code;
     message.reason_phrase = parsed.reason_phrase;
   }
@@ -252,7 +255,4 @@ Parser.parseMessage = function(data, ua) {
   }
 
   return message;
-};
-
-return Parser;
 };

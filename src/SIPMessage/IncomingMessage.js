@@ -1,10 +1,11 @@
+var Utils = require('../Utils');
+var Grammar = require('../Grammar/dist/Grammar');
+
 /**
  * @augments SIP
  * @class Class for incoming SIP message.
  */
-module.exports = function (SIP) {
-
-var IncomingMessage = function() {
+var IncomingMessage = module.exports = function() {
   this.data = null;
   this.headers = null;
   this.method =  null;
@@ -29,7 +30,7 @@ IncomingMessage.prototype = {
   addHeader: function(name, value) {
     var header = { raw: value };
 
-    name = SIP.Utils.headerize(name);
+    name = Utils.headerize(name);
 
     if(this.headers[name]) {
       this.headers[name].push(header);
@@ -44,7 +45,7 @@ IncomingMessage.prototype = {
    * @returns {String|undefined} Returns the specified header, null if header doesn't exist.
    */
   getHeader: function(name) {
-    var header = this.headers[SIP.Utils.headerize(name)];
+    var header = this.headers[Utils.headerize(name)];
 
     if(header) {
       if(header[0]) {
@@ -62,7 +63,7 @@ IncomingMessage.prototype = {
    */
   getHeaders: function(name) {
     var idx, length,
-      header = this.headers[SIP.Utils.headerize(name)],
+      header = this.headers[Utils.headerize(name)],
       result = [];
 
     if(!header) {
@@ -83,7 +84,7 @@ IncomingMessage.prototype = {
    * @returns {boolean} true if header with given name exists, false otherwise
    */
   hasHeader: function(name) {
-    return(this.headers[SIP.Utils.headerize(name)]) ? true : false;
+    return(this.headers[Utils.headerize(name)]) ? true : false;
   },
 
   /**
@@ -95,7 +96,7 @@ IncomingMessage.prototype = {
   parseHeader: function(name, idx) {
     var header, value, parsed;
 
-    name = SIP.Utils.headerize(name);
+    name = Utils.headerize(name);
 
     idx = idx || 0;
 
@@ -115,7 +116,7 @@ IncomingMessage.prototype = {
     }
 
     //substitute '-' by '_' for grammar rule matching.
-    parsed = SIP.Grammar.parse(value, name.replace(/-/g, '_'));
+    parsed = Grammar.parse(value, name.replace(/-/g, '_'));
 
     if(parsed === -1) {
       this.headers[name].splice(idx, 1); //delete from headers
@@ -147,14 +148,10 @@ IncomingMessage.prototype = {
   */
   setHeader: function(name, value) {
     var header = { raw: value };
-    this.headers[SIP.Utils.headerize(name)] = [header];
+    this.headers[Utils.headerize(name)] = [header];
   },
 
   toString: function() {
     return this.data;
   }
-};
-
-return IncomingMessage;
-
 };

@@ -94,7 +94,7 @@ quoted_pair = "\\" ( [\x00-\x09] / [\x0B-\x0C] / [\x0E-\x7F] )
 //=======================
 
 SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
-                        data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port);
+                        data.uri = new URI(data.scheme, data.user, data.host, data.port);
                         delete data.scheme;
                         delete data.user;
                         delete data.host;
@@ -103,7 +103,7 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                       }
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
-                        data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
+                        data.uri = new URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
                         delete data.scheme;
                         delete data.user;
                         delete data.host;
@@ -276,7 +276,7 @@ absoluteURI       = scheme ":" ( hier_part / opaque_part )
                     {
                       // lots of tests fail if this isn't guarded...
                       if (options.startRule === 'Refer_To') {
-                        data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
+                        data.uri = new URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
                         delete data.scheme;
                         delete data.user;
                         delete data.host;
@@ -403,7 +403,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         var header;
                         if(!data.multi_header) data.multi_header = [];
                         try {
-                          header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                          header = new NameAddrHeader(data.uri, data.displayName, data.params);
                           delete data.uri;
                           delete data.displayName;
                           delete data.params;
@@ -551,7 +551,7 @@ event_param       = generic_param
 
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                 var tag = data.tag;
-                  data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                  data = new NameAddrHeader(data.uri, data.displayName, data.params);
                   if (tag) {data.setParam('tag',tag)}
                 }
 
@@ -573,7 +573,7 @@ Min_Expires  = min_expires: delta_seconds {data = min_expires; }
 // Name_Addr
 
 Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
-                        data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                        data = new NameAddrHeader(data.uri, data.displayName, data.params);
                       }
 
 // PROXY-AUTHENTICATE
@@ -659,7 +659,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   var header;
                   if(!data.multi_header) data.multi_header = [];
                   try {
-                    header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                    header = new NameAddrHeader(data.uri, data.displayName, data.params);
                     delete data.uri;
                     delete data.displayName;
                     delete data.params;
@@ -676,7 +676,7 @@ rr_param      = generic_param
 // REFER-TO
 
 Refer_To = ( addr_spec / name_addr / absoluteURI ) ( SEMI r_param )* {
-              data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+              data = new NameAddrHeader(data.uri, data.displayName, data.params);
             }
 
 r_param = generic_param
@@ -743,7 +743,7 @@ Supported  = ( option_tag (COMMA option_tag)* )?
 
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
               var tag = data.tag;
-                data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                data = new NameAddrHeader(data.uri, data.displayName, data.params);
                 if (tag) {data.setParam('tag',tag)}
               }
 

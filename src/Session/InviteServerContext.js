@@ -1,10 +1,15 @@
+var Session = require('./Session');
 var C = require('./Constants');
+var Hacks = require('../Hacks');
+var Exceptions = require('../Exceptions');
+var Utils = require('../Utils');
+var ServerContext = require('../ServerContext');
+var Timers = require('../Timers');
+var Transactions = require('../Transactions');
+var OutgoingRequest = require('../SIPMessage/OutgoingRequest');
+var RequestSender = require('../RequestSender');
 
-module.exports = function (SIP) {
-
-var Session = require('./Session')(SIP);
-
-var InviteServerContext = function(ua, request) {
+var InviteServerContext = module.export = function(ua, request) {
   var expires,
     self = this,
     contentType = request.getHeader('Content-Type'),
@@ -21,11 +26,11 @@ var InviteServerContext = function(ua, request) {
   }
 
   //TODO: move this into media handler
-  SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
-  SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
+  Hacks.Firefox.cannotHandleRelayCandidates(request);
+  Hacks.Firefox.cannotHandleExtraWhitespace(request);
 
-  SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
+  Utils.augment(this, ServerContext, [ua, request]);
+  Utils.augment(this, Session, [ua.configuration.mediaHandlerFactory]);
 
   this.status = C.STATUS_INVITE_RECEIVED;
   this.from_tag = request.from_tag;
@@ -51,13 +56,13 @@ var InviteServerContext = function(ua, request) {
       self.rel100 = c;
     }
   }
-  set100rel('require', SIP.C.supported.REQUIRED);
-  set100rel('supported', SIP.C.supported.SUPPORTED);
+  set100rel('require', C.supported.REQUIRED);
+  set100rel('supported', C.supported.SUPPORTED);
 
   /* Set the to_tag before
    * replying a response code that will create a dialog.
    */
-  request.to_tag = SIP.Utils.newTag();
+  request.to_tag = Utils.newTag();
 
   // An error on dialog creation will fire 'failed' event
   if(!this.createDialog(request, 'UAS', true)) {
@@ -78,25 +83,25 @@ var InviteServerContext = function(ua, request) {
   function fireNewSession() {
     var options = {extraHeaders: ['Contact: ' + self.contact]};
 
-    if (self.rel100 !== SIP.C.supported.REQUIRED) {
+    if (self.rel100 !== C.supported.REQUIRED) {
       self.progress(options);
     }
     self.status = C.STATUS_WAITING_FOR_ANSWER;
 
     // Set userNoAnswerTimer
-    self.timers.userNoAnswerTimer = SIP.Timers.setTimeout(function() {
+    self.timers.userNoAnswerTimer = Timers.setTimeout(function() {
       request.reply(408);
-      self.failed(request, SIP.C.causes.NO_ANSWER);
+      self.failed(request, C.causes.NO_ANSWER);
     }, self.ua.configuration.noAnswerTimeout);
 
     /* Set expiresTimer
      * RFC3261 13.3.1
      */
     if (expires) {
-      self.timers.expiresTimer = SIP.Timers.setTimeout(function() {
+      self.timers.expiresTimer = Timers.setTimeout(function() {
         if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
           request.reply(487);
-          self.failed(request, SIP.C.causes.EXPIRES);
+          self.failed(request, C.causes.EXPIRES);
         }
       }, expires);
     }
@@ -105,7 +110,7 @@ var InviteServerContext = function(ua, request) {
   }
 
   if (!request.body || this.renderbody) {
-    SIP.Timers.setTimeout(fireNewSession, 0);
+    Timers.setTimeout(fireNewSession, 0);
   } else {
     this.hasOffer = true;
     this.mediaHandler.setDescription(request.body)
@@ -124,12 +129,12 @@ InviteServerContext.prototype = {
   reject: function(options) {
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.logger.log('rejecting RTCSession');
 
-    SIP.ServerContext.prototype.reject.apply(this, [options]);
+    ServerContext.prototype.reject.apply(this, [options]);
     return this.terminated();
   },
 
@@ -143,12 +148,12 @@ InviteServerContext.prototype = {
     self = this;
 
     if (this.status === C.STATUS_WAITING_FOR_ACK &&
-       this.request.server_transaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
+       this.request.server_transaction.state !== Transactions.C.STATUS_TERMINATED) {
       dialog = this.dialog;
 
       this.receiveRequest = function(request) {
-        if (request.method === SIP.C.ACK) {
-          this.request(SIP.C.BYE, {
+        if (request.method === C.ACK) {
+          this.request(C.BYE, {
             extraHeaders: extraHeaders,
             body: body
           });
@@ -157,9 +162,9 @@ InviteServerContext.prototype = {
       };
 
       this.request.server_transaction.on('stateChanged', function(){
-        if (this.state === SIP.Transactions.C.STATUS_TERMINATED) {
-          this.request = new SIP.OutgoingRequest(
-            SIP.C.BYE,
+        if (this.state === Transactions.C.STATUS_TERMINATED) {
+          this.request = new OutgoingRequest(
+            C.BYE,
             this.dialog.remote_target,
             this.ua,
             {
@@ -175,7 +180,7 @@ InviteServerContext.prototype = {
             body
           );
 
-          new SIP.RequestSender(
+          new RequestSender(
             {
               request: this.request,
               onRequestTimeout: function() {
@@ -213,7 +218,7 @@ InviteServerContext.prototype = {
   },
 
   /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+   * @param {Object} [options.media] gets passed to MediaHandler.getDescription as mediaHint
    */
   progress: function (options) {
     options = options || {};
@@ -256,24 +261,24 @@ InviteServerContext.prototype = {
           this[this.hasOffer ? 'hasAnswer' : 'hasOffer'] = true;
 
           // Retransmit until we get a response or we time out (see prackTimer below)
-          var timeout = SIP.Timers.T1;
-          this.timers.rel1xxTimer = SIP.Timers.setTimeout(function rel1xxRetransmission() {
+          var timeout = Timers.T1;
+          this.timers.rel1xxTimer = Timers.setTimeout(function rel1xxRetransmission() {
             this.request.reply(statusCode, null, extraHeaders, body);
             timeout *= 2;
-            this.timers.rel1xxTimer = SIP.Timers.setTimeout(rel1xxRetransmission.bind(this), timeout);
+            this.timers.rel1xxTimer = Timers.setTimeout(rel1xxRetransmission.bind(this), timeout);
           }.bind(this), timeout);
 
           // Timeout and reject INVITE if no response
-          this.timers.prackTimer = SIP.Timers.setTimeout(function () {
+          this.timers.prackTimer = Timers.setTimeout(function () {
             if (this.status !== C.STATUS_WAITING_FOR_PRACK) {
               return;
             }
 
             this.logger.log('no PRACK received, rejecting the call');
-            SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
+            Timers.clearTimeout(this.timers.rel1xxTimer);
             this.request.reply(504);
-            this.terminated(null, SIP.C.causes.NO_PRACK);
-          }.bind(this), SIP.Timers.T1 * 64);
+            this.terminated(null, C.causes.NO_PRACK);
+          }.bind(this), Timers.T1 * 64);
 
           // Send the initial response
           response = this.request.reply(statusCode, reasonPhrase, extraHeaders, body);
@@ -281,7 +286,7 @@ InviteServerContext.prototype = {
         }.bind(this),
 
         function onFailure () {
-          this.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          this.failed(null, C.causes.WEBRTC_ERROR);
         }.bind(this)
       );
     } // end do100rel
@@ -292,9 +297,9 @@ InviteServerContext.prototype = {
     }
 
     if (options.statusCode !== 100 &&
-        (this.rel100 === SIP.C.supported.REQUIRED ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
+        (this.rel100 === C.supported.REQUIRED ||
+         (this.rel100 === C.supported.SUPPORTED && options.rel100) ||
+         (this.rel100 === C.supported.SUPPORTED && (this.ua.configuration.rel100 === C.supported.REQUIRED)))) {
       do100rel.apply(this);
     } else {
       normalReply.apply(this);
@@ -303,12 +308,12 @@ InviteServerContext.prototype = {
   },
 
   /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+   * @param {Object} [options.media] gets passed to MediaHandler.getDescription as mediaHint
    */
   accept: function(options) {
     options = options || {};
 
-    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
+    Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;
 
     // commented out now-unused hold-related variables for jshint. See below. JMF 2014-1-21
@@ -331,7 +336,7 @@ InviteServerContext.prototype = {
 
           // run for reply failure callback
           replyFailed = function() {
-            self.failed(null, SIP.C.causes.CONNECTION_ERROR);
+            self.failed(null, C.causes.CONNECTION_ERROR);
           };
 
         // Chrome might call onaddstream before accept() is called, which means
@@ -355,7 +360,7 @@ InviteServerContext.prototype = {
                       replyFailed
                      );
         if (self.status !== C.STATUS_TERMINATED) { // Didn't fail
-          self.accepted(response, SIP.Utils.getReasonPhrase(200));
+          self.accepted(response, Utils.getReasonPhrase(200));
         }
       },
 
@@ -365,8 +370,8 @@ InviteServerContext.prototype = {
         }
         // TODO - fail out on error
         //response = request.reply(480);
-        //self.failed(response, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
-        self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+        //self.failed(response, C.causes.USER_DENIED_MEDIA_ACCESS);
+        self.failed(null, C.causes.WEBRTC_ERROR);
       };
 
     // Check Session Status
@@ -376,7 +381,7 @@ InviteServerContext.prototype = {
     } else if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
       this.status = C.STATUS_ANSWERED;
     } else if (this.status !== C.STATUS_EARLY_MEDIA) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     // An error on dialog creation will fire 'failed' event
@@ -385,7 +390,7 @@ InviteServerContext.prototype = {
       return this;
     }
 
-    SIP.Timers.clearTimeout(this.timers.userNoAnswerTimer);
+    Timers.clearTimeout(this.timers.userNoAnswerTimer);
 
     // this hold-related code breaks FF accepting new calls - JMF 2014-1-21
     /*
@@ -441,8 +446,8 @@ InviteServerContext.prototype = {
     function confirmSession() {
       var contentType;
 
-      SIP.Timers.clearTimeout(this.timers.ackTimer);
-      SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+      Timers.clearTimeout(this.timers.ackTimer);
+      Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
       this.unmute();
 
@@ -455,7 +460,7 @@ InviteServerContext.prototype = {
     }
 
     switch(request.method) {
-    case SIP.C.CANCEL:
+    case C.CANCEL:
       /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
        * was in progress and that the UAC MAY continue with the session established by
        * any 2xx response, or MAY terminate with BYE. SIP does continue with the
@@ -476,17 +481,17 @@ InviteServerContext.prototype = {
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
         this.canceled(request);
-        this.rejected(request, SIP.C.causes.CANCELED);
-        this.failed(request, SIP.C.causes.CANCELED);
+        this.rejected(request, C.causes.CANCELED);
+        this.failed(request, C.causes.CANCELED);
       }
       break;
-    case SIP.C.ACK:
+    case C.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
         if (!this.hasAnswer) {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
             // ACK contains answer to an INVITE w/o SDP negotiation
-            SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
-            SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
+            Hacks.Firefox.cannotHandleRelayCandidates(request);
+            Hacks.Firefox.cannotHandleExtraWhitespace(request);
 
             this.hasAnswer = true;
             this.mediaHandler.setDescription(request.body)
@@ -498,21 +503,21 @@ InviteServerContext.prototype = {
                   statusCode: '488',
                   reasonPhrase: 'Bad Media Description'
                 });
-                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
               }.bind(this)
             );
           } else if (this.early_sdp) {
             confirmSession.apply(this);
           } else {
             //TODO: Pass to mediahandler
-            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
           confirmSession.apply(this);
         }
       }
       break;
-    case SIP.C.PRACK:
+    case C.PRACK:
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         //localMedia = session.mediaHandler.localMedia;
         if(!this.hasAnswer) {
@@ -521,8 +526,8 @@ InviteServerContext.prototype = {
             this.mediaHandler.setDescription(request.body)
             .then(
               function onSuccess () {
-                SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
-                SIP.Timers.clearTimeout(this.timers.prackTimer);
+                Timers.clearTimeout(this.timers.rel1xxTimer);
+                Timers.clearTimeout(this.timers.prackTimer);
                 request.reply(200);
                 if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
                   this.status = C.STATUS_EARLY_MEDIA;
@@ -539,7 +544,7 @@ InviteServerContext.prototype = {
                   statusCode: '488',
                   reasonPhrase: 'Bad Media Description'
                 });
-                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
               }.bind(this)
             );
           } else {
@@ -547,11 +552,11 @@ InviteServerContext.prototype = {
               statusCode: '488',
               reasonPhrase: 'Bad Media Description'
             });
-            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.failed(request, C.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
-          SIP.Timers.clearTimeout(this.timers.rel1xxTimer);
-          SIP.Timers.clearTimeout(this.timers.prackTimer);
+          Timers.clearTimeout(this.timers.rel1xxTimer);
+          Timers.clearTimeout(this.timers.prackTimer);
           request.reply(200);
 
           if (this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
@@ -571,8 +576,4 @@ InviteServerContext.prototype = {
       break;
     }
   }
-};
-
-return InviteServerContext;
-
 };

@@ -1,8 +1,10 @@
-module.exports = function (SIP) {
+var Utils = require('./Utils');
+var ClientContext = require('./ClientContext');
+var Timers = require('./Timers');
+var C = require('./Constants');
+var URI = require('./URI');
 
-var RegisterContext;
-
-RegisterContext = function (ua) {
+var RegisterContext = module.exports = function (ua) {
   var params = {},
       regId = 1,
       events = [
@@ -23,7 +25,7 @@ RegisterContext = function (ua) {
   }
 
   // Call-ID and CSeq values RFC3261 10.2
-  this.call_id = SIP.Utils.createRandomToken(22);
+  this.call_id = Utils.createRandomToken(22);
   this.cseq = 80;
 
   this.to_uri = ua.configuration.uri;
@@ -33,7 +35,7 @@ RegisterContext = function (ua) {
   params.cseq = this.cseq;
 
   // Extends ClientContext
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, 'REGISTER', this.registrar, {params: params}]);
+  Utils.augment(this, ClientContext, [ua, 'REGISTER', this.registrar, {params: params}]);
 
   this.registrationTimer = null;
   this.registrationExpiredTimer = null;
@@ -53,7 +55,7 @@ RegisterContext.prototype = {
     options = options || {};
     extraHeaders = (options.extraHeaders || []).slice();
     extraHeaders.push('Contact: ' + this.contact + ';expires=' + this.expires);
-    extraHeaders.push('Allow: ' + SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: ' + Utils.getAllowedMethods(this.ua));
 
     this.receiveResponse = function(response) {
       var contact, expires,
@@ -67,7 +69,7 @@ RegisterContext.prototype = {
 
       // Clear registration timer
       if (this.registrationTimer !== null) {
-        SIP.Timers.clearTimeout(this.registrationTimer);
+        Timers.clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
 
@@ -83,7 +85,7 @@ RegisterContext.prototype = {
           }
 
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            Timers.clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
 
@@ -114,23 +116,23 @@ RegisterContext.prototype = {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
-          this.registrationTimer = SIP.Timers.setTimeout(function() {
+          this.registrationTimer = Timers.setTimeout(function() {
             self.registrationTimer = null;
             self.register(options);
           }, (expires * 1000) - 3000);
-          this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
+          this.registrationExpiredTimer = Timers.setTimeout(function () {
             self.logger.warn('registration expired');
             if (self.registered) {
-              self.unregistered(null, SIP.C.causes.EXPIRES);
+              self.unregistered(null, C.causes.EXPIRES);
             }
           }, expires * 1000);
 
           //Save gruu values
           if (contact.hasParam('temp-gruu')) {
-            this.ua.contact.temp_gruu = SIP.URI.parse(contact.getParam('temp-gruu').replace(/"/g,''));
+            this.ua.contact.temp_gruu = URI.parse(contact.getParam('temp-gruu').replace(/"/g,''));
           }
           if (contact.hasParam('pub-gruu')) {
-            this.ua.contact.pub_gruu = SIP.URI.parse(contact.getParam('pub-gruu').replace(/"/g,''));
+            this.ua.contact.pub_gruu = URI.parse(contact.getParam('pub-gruu').replace(/"/g,''));
           }
 
           this.registered = true;
@@ -145,21 +147,21 @@ RegisterContext.prototype = {
             this.register(options);
           } else { //This response MUST contain a Min-Expires header field
             this.logger.warn('423 response received for REGISTER without Min-Expires');
-            this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
+            this.registrationFailure(response, C.causes.SIP_FAILURE_CODE);
           }
           break;
         default:
-          cause = SIP.Utils.sipErrorCause(response.status_code);
+          cause = Utils.sipErrorCause(response.status_code);
           this.registrationFailure(response, cause);
       }
     };
 
     this.onRequestTimeout = function() {
-      this.registrationFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.registrationFailure(null, C.causes.REQUEST_TIMEOUT);
     };
 
     this.onTransportError = function() {
-      this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
+      this.registrationFailure(null, C.causes.CONNECTION_ERROR);
     };
 
     this.cseq++;
@@ -176,17 +178,17 @@ RegisterContext.prototype = {
   onTransportClosed: function() {
     this.registered_before = this.registered;
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      Timers.clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
     if (this.registrationExpiredTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+      Timers.clearTimeout(this.registrationExpiredTimer);
       this.registrationExpiredTimer = null;
     }
 
     if(this.registered) {
-      this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
+      this.unregistered(null, C.causes.CONNECTION_ERROR);
     }
   },
 
@@ -214,7 +216,7 @@ RegisterContext.prototype = {
 
     // Clear the registration timer.
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      Timers.clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
@@ -236,25 +238,25 @@ RegisterContext.prototype = {
         case /^2[0-9]{2}$/.test(response.status_code):
           this.emit('accepted', response);
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            Timers.clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
           this.unregistered(response);
           break;
         default:
-          cause = SIP.Utils.sipErrorCause(response.status_code);
+          cause = Utils.sipErrorCause(response.status_code);
           this.unregistered(response,cause);
       }
     };
 
     this.onRequestTimeout = function() {
       // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
+      //this.unregistered(null, C.causes.REQUEST_TIMEOUT);
     };
 
     this.onTransportError = function() {
       // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
+      //this.unregistered(null, C.causes.CONNECTION_ERROR);
     };
 
     this.cseq++;
@@ -270,8 +272,4 @@ RegisterContext.prototype = {
     this.emit('unregistered', response || null, cause || null);
   }
 
-};
-
-
-return RegisterContext;
 };

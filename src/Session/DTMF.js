@@ -2,12 +2,15 @@
  * @fileoverview DTMF
  */
 
+var Utils = require('../Utils');
+var EventEmitter = require('../EventEmitter');
+var Session = require('./Session');
+var Exceptions = require('../Exceptions');
+
 /**
  * @class DTMF
- * @param {SIP.Session} session
+ * @param {Session} session
  */
-module.exports = function (SIP) {
-
 var DTMF,
   C = {
     MIN_DURATION:            70,
@@ -17,7 +20,7 @@ var DTMF,
     DEFAULT_INTER_TONE_GAP:  500
   };
 
-DTMF = function(session, tone, options) {
+DTMF = module.exports = function(session, tone, options) {
   var events = [
   'succeeded',
   'failed'
@@ -52,7 +55,7 @@ DTMF = function(session, tone, options) {
   }
 
   // Check duration
-  if (duration && !SIP.Utils.isDecimal(duration)) {
+  if (duration && !Utils.isDecimal(duration)) {
     throw new TypeError('Invalid tone duration: '+ duration);
   } else if (!duration) {
     duration = DTMF.C.DEFAULT_DURATION;
@@ -68,7 +71,7 @@ DTMF = function(session, tone, options) {
   this.duration = duration;
 
   // Check interToneGap
-  if (interToneGap && !SIP.Utils.isDecimal(interToneGap)) {
+  if (interToneGap && !Utils.isDecimal(interToneGap)) {
     throw new TypeError('Invalid interToneGap: '+ interToneGap);
   } else if (!interToneGap) {
     interToneGap = DTMF.C.DEFAULT_INTER_TONE_GAP;
@@ -82,7 +85,7 @@ DTMF = function(session, tone, options) {
 
   this.initEvents(events);
 };
-DTMF.prototype = new SIP.EventEmitter();
+DTMF.prototype = new EventEmitter();
 
 
 DTMF.prototype.send = function(options) {
@@ -91,9 +94,9 @@ DTMF.prototype.send = function(options) {
   this.direction = 'outgoing';
 
   // Check RTCSession Status
-  if (this.owner.status !== SIP.Session.C.STATUS_CONFIRMED &&
-    this.owner.status !== SIP.Session.C.STATUS_WAITING_FOR_ACK) {
-    throw new SIP.Exceptions.InvalidStateError(this.owner.status);
+  if (this.owner.status !== Session.C.STATUS_CONFIRMED &&
+    this.owner.status !== Session.C.STATUS_WAITING_FOR_ACK) {
+    throw new Exceptions.InvalidStateError(this.owner.status);
   }
 
   // Get DTMF options
@@ -105,7 +108,7 @@ DTMF.prototype.send = function(options) {
   body = "Signal= " + this.tone + "\r\n";
   body += "Duration= " + this.duration;
 
-  this.request = this.owner.dialog.sendRequest(this, SIP.C.INFO, {
+  this.request = this.owner.dialog.sendRequest(this, C.INFO, {
     extraHeaders: extraHeaders,
     body: body
   });
@@ -132,7 +135,7 @@ DTMF.prototype.receiveResponse = function(response) {
       break;
 
     default:
-      cause = SIP.Utils.sipErrorCause(response.status_code);
+      cause = Utils.sipErrorCause(response.status_code);
       this.emit('failed', response, cause);
       break;
   }
@@ -142,7 +145,7 @@ DTMF.prototype.receiveResponse = function(response) {
  * @private
  */
 DTMF.prototype.onRequestTimeout = function() {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+  this.emit('failed', null, C.causes.REQUEST_TIMEOUT);
   this.owner.onRequestTimeout();
 };
 
@@ -150,7 +153,7 @@ DTMF.prototype.onRequestTimeout = function() {
  * @private
  */
 DTMF.prototype.onTransportError = function() {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
+  this.emit('failed', null, C.causes.CONNECTION_ERROR);
   this.owner.onTransportError();
 };
 
@@ -158,7 +161,7 @@ DTMF.prototype.onTransportError = function() {
  * @private
  */
 DTMF.prototype.onDialogError = function(response) {
-  this.emit('failed', response, SIP.C.causes.DIALOG_ERROR);
+  this.emit('failed', response, C.causes.DIALOG_ERROR);
   this.owner.onDialogError(response);
 };
 
@@ -179,5 +182,3 @@ DTMF.prototype.init_incoming = function(request) {
 };
 
 DTMF.C = C;
-return DTMF;
-};

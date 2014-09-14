@@ -1,13 +1,30 @@
+var LoggerFactory = require('./LoggerFactory');
+var RegisterContext = require('./RegisterContext');
+var EventEmitter = require('./EventEmitter');
+var Utils = require('./Utils');
+var InviteClientContext = require('./Session/InviteClientContext');
+var Subscription = require('./Subscription');
+var ClientContext = require('./ClientContext');
+var Timers = require('./Timers');
+var Transport = require('./Transport');
+var Transactions = require('./Transactions');
+var ServerContext = require('./ServerContext');
+var InviteServerContext = require('./Session/InviteServerContext');
+var URI = require('./URI');
+var WebRTC = require('./WebRTC');
+var DigestAuthentication = require('./DigestAuthentication');
+var Exceptions = require('./Exceptions');
+var Grammar = require('./Grammar/dist/Grammar');
+
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
- * @param {function returning SIP.MediaHandler} [configuration.mediaHandlerFactory]
+ * @param {function returning MediaHandler} [configuration.mediaHandlerFactory]
  *        A function will be invoked by each of the UA's Sessions to build the MediaHandler for that Session.
  *        If no (or a falsy) value is provided, each Session will use a default (WebRTC) MediaHandler.
  *
- * @param {Object} [configuration.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [configuration.media] gets passed to MediaHandler.getDescription as mediaHint
  */
-module.exports = function (SIP) {
 var UA,
   C = {
     // UA status codes
@@ -47,7 +64,7 @@ var UA,
     TAG_LENGTH: 10
   };
 
-UA = function(configuration) {
+UA = module.exports = function(configuration) {
   var self = this,
   events = [
     'connecting',
@@ -76,7 +93,7 @@ UA = function(configuration) {
   // Set Accepted Body Types
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
 
-  this.log = new SIP.LoggerFactory();
+  this.log = new LoggerFactory();
   this.logger = this.getLogger('sip.ua');
 
   this.cache = {
@@ -149,7 +166,7 @@ UA = function(configuration) {
   /**
    * Load configuration
    *
-   * @throws {SIP.Exceptions.ConfigurationError}
+   * @throws {Exceptions.ConfigurationError}
    * @throws {TypeError}
    */
 
@@ -186,7 +203,7 @@ UA = function(configuration) {
   }
 
   // Initialize registerContext
-  this.registerContext = new SIP.RegisterContext(this);
+  this.registerContext = new RegisterContext(this);
   this.registerContext.on('failed', selfEmit('registrationFailed'));
   this.registerContext.on('registered', selfEmit('registered'));
   this.registerContext.on('unregistered', selfEmit('unregistered'));
@@ -195,7 +212,7 @@ UA = function(configuration) {
     this.start();
   }
 };
-UA.prototype = new SIP.EventEmitter();
+UA.prototype = new EventEmitter();
 
 //=================
 //  High Level API
@@ -246,23 +263,23 @@ UA.prototype.afterConnected = function afterConnected (callback) {
  *
  * @param {String} target
  * @param {Object} views
- * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+ * @param {Object} [options.media] gets passed to MediaHandler.getDescription as mediaHint
  *
  * @throws {TypeError}
  *
  */
 UA.prototype.invite = function(target, options) {
   options = options || {};
-  SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
+  Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger);
 
-  var context = new SIP.InviteClientContext(this, target, options);
+  var context = new InviteClientContext(this, target, options);
 
   this.afterConnected(context.invite.bind(context, {media: options.media}));
   return context;
 };
 
 UA.prototype.subscribe = function(target, event, options) {
-  var sub = new SIP.Subscription(this, target, event, options);
+  var sub = new Subscription(this, target, event, options);
 
   this.afterConnected(sub.subscribe.bind(sub));
   return sub;
@@ -287,11 +304,11 @@ UA.prototype.message = function(target, body, options) {
   options.contentType = options.contentType || 'text/plain';
   options.body = body;
 
-  return this.request(SIP.C.MESSAGE, target, options);
+  return this.request(C.MESSAGE, target, options);
 };
 
 UA.prototype.request = function (method, target, options) {
-  var req = new SIP.ClientContext(this, method, target, options);
+  var req = new ClientContext(this, method, target, options);
 
   this.afterConnected(req.send.bind(req));
   return req;
@@ -320,7 +337,7 @@ UA.prototype.stop = function() {
   }
 
   // Clear transportRecoveryTimer
-  SIP.Timers.clearTimeout(this.transportRecoveryTimer);
+  Timers.clearTimeout(this.transportRecoveryTimer);
 
   // Close registerContext
   this.logger.log('closing registerContext');
@@ -373,7 +390,7 @@ UA.prototype.start = function() {
   this.logger.log('user requested startup...');
   if (this.status === C.STATUS_INIT) {
     server = this.getNextWsServer();
-    new SIP.Transport(this, server);
+    new Transport(this, server);
   } else if(this.status === C.STATUS_USER_CLOSED) {
     this.logger.log('resuming');
     this.status = C.STATUS_READY;
@@ -392,10 +409,10 @@ UA.prototype.start = function() {
  *
  * @param {String} target
  *
- * @returns {SIP.URI|undefined}
+ * @returns {URI|undefined}
  */
 UA.prototype.normalizeTarget = function(target) {
-  return SIP.Utils.normalizeTarget(target, this.configuration.hostportParams);
+  return Utils.normalizeTarget(target, this.configuration.hostportParams);
 };
 
 
@@ -436,15 +453,15 @@ UA.prototype.getLogger = function(category, label) {
  * Transport Close event
  * @private
  * @event
- * @param {SIP.Transport} transport.
+ * @param {Transport} transport.
  */
 UA.prototype.onTransportClosed = function(transport) {
   // Run _onTransportError_ callback on every client transaction using _transport_
   var type, idx, length,
     client_transactions = ['nict', 'ict', 'nist', 'ist'];
 
-  transport.server.status = SIP.Transport.C.STATUS_DISCONNECTED;
-  this.logger.log('connection state set to '+ SIP.Transport.C.STATUS_DISCONNECTED);
+  transport.server.status = Transport.C.STATUS_DISCONNECTED;
+  this.logger.log('connection state set to '+ Transport.C.STATUS_DISCONNECTED);
 
   length = client_transactions.length;
   for (type = 0; type < length; type++) {
@@ -465,16 +482,16 @@ UA.prototype.onTransportClosed = function(transport) {
  * Connection reattempt logic has been done and didn't success.
  * @private
  * @event
- * @param {SIP.Transport} transport.
+ * @param {Transport} transport.
  */
 UA.prototype.onTransportError = function(transport) {
   var server;
 
-  this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ SIP.Transport.C.STATUS_ERROR);
+  this.logger.log('transport ' + transport.server.ws_uri + ' failed | connection state set to '+ Transport.C.STATUS_ERROR);
 
   // Close sessions.
   //Mark this transport as 'down' and try the next one
-  transport.server.status = SIP.Transport.C.STATUS_ERROR;
+  transport.server.status = Transport.C.STATUS_ERROR;
 
   this.emit('disconnected', {
     transport: transport
@@ -483,7 +500,7 @@ UA.prototype.onTransportError = function(transport) {
   server = this.getNextWsServer();
 
   if(server) {
-    new SIP.Transport(this, server);
+    new Transport(this, server);
   }else {
     this.closeSessionsOnTransportError();
     if (!this.error || this.error !== C.NETWORK_ERROR) {
@@ -499,7 +516,7 @@ UA.prototype.onTransportError = function(transport) {
  * Transport connection event.
  * @private
  * @event
- * @param {SIP.Transport} transport.
+ * @param {Transport} transport.
  */
 UA.prototype.onTransportConnected = function(transport) {
   this.transport = transport;
@@ -507,8 +524,8 @@ UA.prototype.onTransportConnected = function(transport) {
   // Reset transport recovery counter
   this.transportRecoverAttempts = 0;
 
-  transport.server.status = SIP.Transport.C.STATUS_READY;
-  this.logger.log('connection state set to '+ SIP.Transport.C.STATUS_READY);
+  transport.server.status = Transport.C.STATUS_READY;
+  this.logger.log('connection state set to '+ Transport.C.STATUS_READY);
 
   if(this.status === C.STATUS_USER_CLOSED) {
     return;
@@ -530,7 +547,7 @@ UA.prototype.onTransportConnected = function(transport) {
 /**
  * Transport connecting event
  * @private
- * @param {SIP.Transport} transport.
+ * @param {Transport} transport.
  * #param {Integer} attempts.
  */
   UA.prototype.onTransportConnecting = function(transport, attempts) {
@@ -544,7 +561,7 @@ UA.prototype.onTransportConnected = function(transport) {
 /**
  * new Transaction
  * @private
- * @param {SIP.Transaction} transaction.
+ * @param {Transaction} transaction.
  */
 UA.prototype.newTransaction = function(transaction) {
   this.transactions[transaction.type][transaction.id] = transaction;
@@ -555,7 +572,7 @@ UA.prototype.newTransaction = function(transaction) {
 /**
  * destroy Transaction
  * @private
- * @param {SIP.Transaction} transaction.
+ * @param {Transaction} transaction.
  */
 UA.prototype.destroyTransaction = function(transaction) {
   delete this.transactions[transaction.type][transaction.id];
@@ -572,7 +589,7 @@ UA.prototype.destroyTransaction = function(transaction) {
 /**
  * Request reception
  * @private
- * @param {SIP.IncomingRequest} request.
+ * @param {IncomingRequest} request.
  */
 UA.prototype.receiveRequest = function(request) {
   var dialog, session, message,
@@ -591,20 +608,20 @@ UA.prototype.receiveRequest = function(request) {
        ruriMatches(this.contact.pub_gruu) ||
        ruriMatches(this.contact.temp_gruu))) {
     this.logger.warn('Request-URI does not point to us');
-    if (request.method !== SIP.C.ACK) {
+    if (request.method !== C.ACK) {
       request.reply_sl(404);
     }
     return;
   }
 
   // Check request URI scheme
-  if(request.ruri.scheme === SIP.C.SIPS) {
+  if(request.ruri.scheme === C.SIPS) {
     request.reply_sl(416);
     return;
   }
 
   // Check transaction
-  if(SIP.Transactions.checkTransaction(this, request)) {
+  if(Transactions.checkTransaction(this, request)) {
     return;
   }
 
@@ -613,38 +630,38 @@ UA.prototype.receiveRequest = function(request) {
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-  if(method === SIP.C.OPTIONS) {
-    new SIP.Transactions.NonInviteServerTransaction(request, this);
+  if(method === C.OPTIONS) {
+    new Transactions.NonInviteServerTransaction(request, this);
     request.reply(200, null, [
-      'Allow: '+ SIP.Utils.getAllowedMethods(this),
+      'Allow: '+ Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else if (method === SIP.C.MESSAGE) {
+  } else if (method === C.MESSAGE) {
     if (!this.checkListener(methodLower)) {
       // UA is not listening for this.  Reject immediately.
-      new SIP.Transactions.NonInviteServerTransaction(request, this);
-      request.reply(405, null, ['Allow: '+ SIP.Utils.getAllowedMethods(this)]);
+      new Transactions.NonInviteServerTransaction(request, this);
+      request.reply(405, null, ['Allow: '+ Utils.getAllowedMethods(this)]);
       return;
     }
-    message = new SIP.ServerContext(this, request);
+    message = new ServerContext(this, request);
     message.body = request.body;
     message.content_type = request.getHeader('Content-Type') || 'text/plain';
 
     request.reply(200, null);
     this.emit('message', message);
-  } else if (method !== SIP.C.INVITE &&
-             method !== SIP.C.ACK) {
+  } else if (method !== C.INVITE &&
+             method !== C.ACK) {
     // Let those methods pass through to normal processing for now.
-    transaction = new SIP.ServerContext(this, request);
+    transaction = new ServerContext(this, request);
   }
 
   // Initial Request
   if(!request.to_tag) {
     switch(method) {
-      case SIP.C.INVITE:
+      case C.INVITE:
         var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
         if(!isMediaSupported || isMediaSupported()) {
-          session = new SIP.InviteServerContext(this, request)
+          session = new InviteServerContext(this, request)
             .on('invite', function() {
               self.emit('invite', this);
             });
@@ -653,11 +670,11 @@ UA.prototype.receiveRequest = function(request) {
           request.reply(488);
         }
         break;
-      case SIP.C.BYE:
+      case C.BYE:
         // Out of dialog BYE received
         request.reply(481);
         break;
-      case SIP.C.CANCEL:
+      case C.CANCEL:
         session = this.findSession(request);
         if(session) {
           session.receiveRequest(request);
@@ -665,7 +682,7 @@ UA.prototype.receiveRequest = function(request) {
           this.logger.warn('received CANCEL request for a non existent session');
         }
         break;
-      case SIP.C.ACK:
+      case C.ACK:
         /* Absorb it.
          * ACK request without a corresponding Invite Transaction
          * and without To tag.
@@ -681,11 +698,11 @@ UA.prototype.receiveRequest = function(request) {
     dialog = this.findDialog(request);
 
     if(dialog) {
-      if (method === SIP.C.INVITE) {
-        new SIP.Transactions.InviteServerTransaction(request, this);
+      if (method === C.INVITE) {
+        new Transactions.InviteServerTransaction(request, this);
       }
       dialog.receiveRequest(request);
-    } else if (method === SIP.C.NOTIFY) {
+    } else if (method === C.NOTIFY) {
       session = this.findSession(request);
       if(session) {
         session.receiveRequest(request);
@@ -700,7 +717,7 @@ UA.prototype.receiveRequest = function(request) {
      * been created.
      */
     else {
-      if(method !== SIP.C.ACK) {
+      if(method !== C.ACK) {
         request.reply(481);
       }
     }
@@ -714,8 +731,8 @@ UA.prototype.receiveRequest = function(request) {
 /**
  * Get the session to which the request belongs to, if any.
  * @private
- * @param {SIP.IncomingRequest} request.
- * @returns {SIP.OutgoingSession|SIP.IncomingSession|null}
+ * @param {IncomingRequest} request.
+ * @returns {OutgoingSession|IncomingSession|null}
  */
 UA.prototype.findSession = function(request) {
   return this.sessions[request.call_id + request.from_tag] ||
@@ -726,8 +743,8 @@ UA.prototype.findSession = function(request) {
 /**
  * Get the dialog to which the request belongs to, if any.
  * @private
- * @param {SIP.IncomingRequest}
- * @returns {SIP.Dialog|null}
+ * @param {IncomingRequest}
+ * @returns {Dialog|null}
  */
 UA.prototype.findDialog = function(request) {
   return this.dialogs[request.call_id + request.from_tag + request.to_tag] ||
@@ -749,7 +766,7 @@ UA.prototype.getNextWsServer = function() {
   for (idx = 0; idx < length; idx++) {
     ws_server = this.configuration.wsServers[idx];
 
-    if (ws_server.status === SIP.Transport.C.STATUS_ERROR) {
+    if (ws_server.status === Transport.C.STATUS_ERROR) {
       continue;
     } else if (candidates.length === 0) {
       candidates.push(ws_server);
@@ -804,10 +821,10 @@ UA.prototype.recoverTransport = function(ua) {
 
   this.logger.log('next connection attempt in '+ nextRetry +' seconds');
 
-  this.transportRecoveryTimer = SIP.Timers.setTimeout(
+  this.transportRecoveryTimer = Timers.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
-      new SIP.Transport(ua, server);
+      new Transport(ua, server);
     }, nextRetry * 1000);
 };
 
@@ -823,9 +840,9 @@ UA.prototype.loadConfig = function(configuration) {
       /* Host address
       * Value to be set in Via sent_by and host part of Contact FQDN
       */
-      viaHost: SIP.Utils.createRandomToken(12) + '.invalid',
+      viaHost: Utils.createRandomToken(12) + '.invalid',
 
-      uri: new SIP.URI('sip', 'anonymous.' + SIP.Utils.createRandomToken(6), 'anonymous.invalid', null, null),
+      uri: new URI('sip', 'anonymous.' + Utils.createRandomToken(6), 'anonymous.invalid', null, null),
       wsServers: [{
         scheme: 'WSS',
         sip_uri: '<sip:edge.sip.onsip.com;transport=ws;lr>',
@@ -852,7 +869,7 @@ UA.prototype.loadConfig = function(configuration) {
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
-      userAgentString: SIP.C.USER_AGENT,
+      userAgentString: C.USER_AGENT,
 
       // Session parameters
       noAnswerTimeout: 60,
@@ -870,12 +887,12 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      rel100: SIP.C.supported.UNSUPPORTED,
+      rel100: C.supported.UNSUPPORTED,
 
-      mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
+      mediaHandlerFactory: WebRTC.MediaHandler.defaultFactory,
 
       authenticationFactory: function (ua) {
-        return new SIP.DigestAuthentication(ua);
+        return new DigestAuthentication(ua);
       }
     };
 
@@ -904,19 +921,19 @@ UA.prototype.loadConfig = function(configuration) {
   for(parameter in UA.configuration_check.mandatory) {
     aliasUnderscored(parameter, this.logger);
     if(!configuration.hasOwnProperty(parameter)) {
-      throw new SIP.Exceptions.ConfigurationError(parameter);
+      throw new Exceptions.ConfigurationError(parameter);
     } else {
       value = configuration[parameter];
       checked_value = UA.configuration_check.mandatory[parameter](value);
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
-        throw new SIP.Exceptions.ConfigurationError(parameter, value);
+        throw new Exceptions.ConfigurationError(parameter, value);
       }
     }
   }
 
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
+  Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, C.supported.UNSUPPORTED);
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
@@ -934,7 +951,7 @@ UA.prototype.loadConfig = function(configuration) {
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
-        throw new SIP.Exceptions.ConfigurationError(parameter, value);
+        throw new Exceptions.ConfigurationError(parameter, value);
       }
     }
   }
@@ -943,7 +960,7 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Connection recovery intervals
   if(settings.connectionRecoveryMaxInterval < settings.connectionRecoveryMinInterval) {
-    throw new SIP.Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
+    throw new Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
   }
 
   // Post Configuration Process
@@ -955,11 +972,11 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Instance-id for GRUU
   if (!settings.instanceId) {
-    settings.instanceId = SIP.Utils.newUUID();
+    settings.instanceId = Utils.newUUID();
   }
 
   // sipjsId instance parameter. Static random tag of length 5
-  settings.sipjsId = SIP.Utils.createRandomToken(5);
+  settings.sipjsId = Utils.createRandomToken(5);
 
   // String containing settings.uri without scheme and user.
   hostportParams = settings.uri.clone();
@@ -985,13 +1002,13 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Via Host
   if (settings.hackIpInContact) {
-    settings.viaHost = SIP.Utils.getRandomTestNetIP();
+    settings.viaHost = Utils.getRandomTestNetIP();
   }
 
   this.contact = {
     pub_gruu: null,
     temp_gruu: null,
-    uri: new SIP.URI('sip', SIP.Utils.createRandomToken(8), settings.viaHost, null, {transport: 'ws'}),
+    uri: new URI('sip', Utils.createRandomToken(8), settings.viaHost, null, {transport: 'ws'}),
     toString: function(options){
       options = options || {};
 
@@ -1017,7 +1034,7 @@ UA.prototype.loadConfig = function(configuration) {
   };
 
   // media overrides mediaConstraints
-  SIP.Utils.optionsOverride(settings, 'media', 'mediaConstraints', true, this.logger);
+  Utils.optionsOverride(settings, 'media', 'mediaConstraints', true, this.logger);
 
   // Fill the value of the configuration_skeleton
   for(parameter in settings) {
@@ -1078,7 +1095,7 @@ UA.configuration_skeleton = (function() {
       "registrarServer",
       "reliable",
       "rel100",
-      "userAgentString", //SIP.C.USER_AGENT
+      "userAgentString", //C.USER_AGENT
       "autostart",
       "stunServers",
       "traceSip",
@@ -1129,9 +1146,9 @@ UA.configuration_check = {
       var parsed;
 
       if (!(/^sip:/i).test(uri)) {
-        uri = SIP.C.SIP + ':' + uri;
+        uri = C.SIP + ':' + uri;
       }
-      parsed = SIP.URI.parse(uri);
+      parsed = URI.parse(uri);
 
       if(!parsed) {
         return;
@@ -1178,7 +1195,7 @@ UA.configuration_check = {
           return;
         }
 
-        url = SIP.Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
+        url = Grammar.parse(wsServers[idx].ws_uri, 'absoluteURI');
 
         if(url === -1) {
           return;
@@ -1199,7 +1216,7 @@ UA.configuration_check = {
     },
 
     authorizationUser: function(authorizationUser) {
-      if(SIP.Grammar.parse('"'+ authorizationUser +'"', 'quoted_string') === -1) {
+      if(Grammar.parse('"'+ authorizationUser +'"', 'quoted_string') === -1) {
         return;
       } else {
         return authorizationUser;
@@ -1208,7 +1225,7 @@ UA.configuration_check = {
 
     connectionRecoveryMaxInterval: function(connectionRecoveryMaxInterval) {
       var value;
-      if(SIP.Utils.isDecimal(connectionRecoveryMaxInterval)) {
+      if(Utils.isDecimal(connectionRecoveryMaxInterval)) {
         value = Number(connectionRecoveryMaxInterval);
         if(value > 0) {
           return value;
@@ -1218,7 +1235,7 @@ UA.configuration_check = {
 
     connectionRecoveryMinInterval: function(connectionRecoveryMinInterval) {
       var value;
-      if(SIP.Utils.isDecimal(connectionRecoveryMinInterval)) {
+      if(Utils.isDecimal(connectionRecoveryMinInterval)) {
         value = Number(connectionRecoveryMinInterval);
         if(value > 0) {
           return value;
@@ -1227,7 +1244,7 @@ UA.configuration_check = {
     },
 
     displayName: function(displayName) {
-      if(SIP.Grammar.parse('"' + displayName + '"', 'displayName') === -1) {
+      if(Grammar.parse('"' + displayName + '"', 'displayName') === -1) {
         return;
       } else {
         return displayName;
@@ -1255,7 +1272,7 @@ UA.configuration_check = {
         instanceId = instanceId.substr(5);
       }
 
-      if(SIP.Grammar.parse(instanceId, 'uuid') === -1) {
+      if(Grammar.parse(instanceId, 'uuid') === -1) {
         return;
       } else {
         return instanceId;
@@ -1264,7 +1281,7 @@ UA.configuration_check = {
 
     noAnswerTimeout: function(noAnswerTimeout) {
       var value;
-      if (SIP.Utils.isDecimal(noAnswerTimeout)) {
+      if (Utils.isDecimal(noAnswerTimeout)) {
         value = Number(noAnswerTimeout);
         if (value > 0) {
           return value;
@@ -1277,12 +1294,12 @@ UA.configuration_check = {
     },
 
     rel100: function(rel100) {
-      if(rel100 === SIP.C.supported.REQUIRED) {
-        return SIP.C.supported.REQUIRED;
-      } else if (rel100 === SIP.C.supported.SUPPORTED) {
-        return SIP.C.supported.SUPPORTED;
+      if(rel100 === C.supported.REQUIRED) {
+        return C.supported.REQUIRED;
+      } else if (rel100 === C.supported.SUPPORTED) {
+        return C.supported.SUPPORTED;
       } else  {
-        return SIP.C.supported.UNSUPPORTED;
+        return C.supported.UNSUPPORTED;
       }
     },
 
@@ -1294,7 +1311,7 @@ UA.configuration_check = {
 
     registerExpires: function(registerExpires) {
       var value;
-      if (SIP.Utils.isDecimal(registerExpires)) {
+      if (Utils.isDecimal(registerExpires)) {
         value = Number(registerExpires);
         if (value > 0) {
           return value;
@@ -1310,9 +1327,9 @@ UA.configuration_check = {
       }
 
       if (!/^sip:/i.test(registrarServer)) {
-        registrarServer = SIP.C.SIP + ':' + registrarServer;
+        registrarServer = C.SIP + ':' + registrarServer;
       }
-      parsed = SIP.URI.parse(registrarServer);
+      parsed = URI.parse(registrarServer);
 
       if(!parsed) {
         return;
@@ -1339,7 +1356,7 @@ UA.configuration_check = {
           stun_server = 'stun:' + stun_server;
         }
 
-        if(SIP.Grammar.parse(stun_server, 'stun_URI') === -1) {
+        if(Grammar.parse(stun_server, 'stun_URI') === -1) {
           return;
         } else {
           stunServers[idx] = stun_server;
@@ -1387,7 +1404,7 @@ UA.configuration_check = {
             url = 'turn:' + url;
           }
 
-          if(SIP.Grammar.parse(url, 'turn_URI') === -1) {
+          if(Grammar.parse(url, 'turn_URI') === -1) {
             return;
           }
         }
@@ -1409,7 +1426,7 @@ UA.configuration_check = {
 
     wsServerMaxReconnection: function(wsServerMaxReconnection) {
       var value;
-      if (SIP.Utils.isDecimal(wsServerMaxReconnection)) {
+      if (Utils.isDecimal(wsServerMaxReconnection)) {
         value = Number(wsServerMaxReconnection);
         if (value > 0) {
           return value;
@@ -1419,7 +1436,7 @@ UA.configuration_check = {
 
     wsServerReconnectionTimeout: function(wsServerReconnectionTimeout) {
       var value;
-      if (SIP.Utils.isDecimal(wsServerReconnectionTimeout)) {
+      if (Utils.isDecimal(wsServerReconnectionTimeout)) {
         value = Number(wsServerReconnectionTimeout);
         if (value > 0) {
           return value;
@@ -1448,5 +1465,3 @@ UA.configuration_check = {
 };
 
 UA.C = C;
-return UA;
-};

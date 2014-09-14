@@ -4,7 +4,7 @@
 
 /* MediaHandler
  * @class PeerConnection helper Class.
- * @param {SIP.Session} session
+ * @param {Session} session
  * @param {Object} [options]
  */
 module.exports = function (EventEmitter) {

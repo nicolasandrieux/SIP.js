@@ -1,7 +1,10 @@
-module.exports = function (SIP) {
-var ClientContext;
+var OutgoingRequest = require('./SIPMessage/OutgoingRequest');
+var EventEmitter = require('./EventEmitter');
+var RequestSender = require('./RequestSender');
+var Utils = require('./Utils');
+var C = require('./Constants');
 
-ClientContext = function (ua, method, target, options) {
+var ClientContext = module.exports = function (ua, method, target, options) {
   var params, extraHeaders,
       originalTarget = target,
       events = [
@@ -37,7 +40,7 @@ ClientContext = function (ua, method, target, options) {
     extraHeaders.push('Content-Type: ' + this.contentType);
   }
 
-  this.request = new SIP.OutgoingRequest(this.method, target, this.ua, params, extraHeaders);
+  this.request = new OutgoingRequest(this.method, target, this.ua, params, extraHeaders);
 
   this.localIdentity = this.request.from;
   this.remoteIdentity = this.request.to;
@@ -50,24 +53,24 @@ ClientContext = function (ua, method, target, options) {
 
   this.initEvents(events);
 };
-ClientContext.prototype = new SIP.EventEmitter();
+ClientContext.prototype = new EventEmitter();
 
 ClientContext.prototype.send = function () {
-  (new SIP.RequestSender(this, this.ua)).send();
+  (new RequestSender(this, this.ua)).send();
   return this;
 };
 
 ClientContext.prototype.cancel = function (options) {
   options = options || {};
 
-  var cancel_reason = SIP.Utils.getCancelReason(options.status_code, options.reason_phrase);
+  var cancel_reason = Utils.getCancelReason(options.status_code, options.reason_phrase);
   this.request.cancel(cancel_reason);
 
   this.emit('cancel');
 };
 
 ClientContext.prototype.receiveResponse = function (response) {
-  var cause = SIP.Utils.getReasonPhrase(response.status_code);
+  var cause = Utils.getReasonPhrase(response.status_code);
 
   switch(true) {
     case /^1[0-9]{2}$/.test(response.status_code):
@@ -93,12 +96,9 @@ ClientContext.prototype.receiveResponse = function (response) {
 };
 
 ClientContext.prototype.onRequestTimeout = function () {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+  this.emit('failed', null, C.causes.REQUEST_TIMEOUT);
 };
 
 ClientContext.prototype.onTransportError = function () {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
-};
-
-return ClientContext;
+  this.emit('failed', null, C.causes.CONNECTION_ERROR);
 };

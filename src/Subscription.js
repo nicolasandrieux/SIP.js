@@ -3,12 +3,18 @@
  * @fileoverview SIP Subscriber (SIP-Specific Event Notifications RFC6665)
  */
 
+var Utils = require('./Utils');
+var ClientContext = require('./ClientContext');
+var C = require('./Constants');
+var Timers = require('./Timers');
+var OutgoingRequest = require('./SIPMessage/OutgoingRequest');
+var Dialog = require('./Dialogs');
+
 /**
  * @augments SIP
  * @class Class creating a SIP Subscription.
  */
-module.exports = function (SIP) {
-var Subscription = function (ua, target, event, options) {
+var Subscription = module.exports = function (ua, target, event, options) {
   var events;
 
   options = options || {};
@@ -21,7 +27,7 @@ var Subscription = function (ua, target, event, options) {
   if (!event) {
     throw new TypeError('Event necessary to create a subscription.');
   } else {
-    //TODO: check for valid events here probably make a list in SIP.C; or leave it up to app to check?
+    //TODO: check for valid events here probably make a list in C; or leave it up to app to check?
     //The check may need to/should probably occur on the other side,
     this.event = event;
   }
@@ -43,9 +49,9 @@ var Subscription = function (ua, target, event, options) {
   this.contact = ua.contact.toString();
 
   options.extraHeaders.push('Contact: '+ this.contact);
-  options.extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  options.extraHeaders.push('Allow: '+ Utils.getAllowedMethods(ua));
 
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.SUBSCRIBE, target, options]);
+  Utils.augment(this, ClientContext, [ua, C.SUBSCRIBE, target, options]);
 
   this.logger = ua.getLogger('sip.subscription');
 
@@ -60,9 +66,9 @@ Subscription.prototype = {
   subscribe: function() {
     var sub = this;
 
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-    SIP.Timers.clearTimeout(this.timers.N);
-    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
+    Timers.clearTimeout(this.timers.sub_duration);
+    Timers.clearTimeout(this.timers.N);
+    this.timers.N = Timers.setTimeout(sub.timer_fire.bind(sub), Timers.TIMER_N);
 
     this.send();
 
@@ -73,13 +79,13 @@ Subscription.prototype = {
 
   receiveResponse: function(response) {
     var expires, sub = this,
-        cause = SIP.Utils.getReasonPhrase(response.status_code);
+        cause = Utils.getReasonPhrase(response.status_code);
 
     if (this.errorCodes.indexOf(response.status_code) !== -1) {
       this.failed(response, null);
     } else if (/^2[0-9]{2}$/.test(response.status_code)){
       expires = response.getHeader('Expires');
-      SIP.Timers.clearTimeout(this.timers.N);
+      Timers.clearTimeout(this.timers.N);
 
       if (this.createConfirmedDialog(response,'UAC')) {
         this.id = this.dialog.id.toString();
@@ -89,14 +95,14 @@ Subscription.prototype = {
       }
 
       if (expires && expires <= this.expires) {
-        this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), expires * 1000);
+        this.timers.sub_duration = Timers.setTimeout(sub.subscribe.bind(sub), expires * 1000);
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
-          this.failed(response, SIP.C.EXPIRES_HEADER_MISSING);
+          this.failed(response, C.EXPIRES_HEADER_MISSING);
         } else {
           this.logger.warn('Expires header in a 200-class response to SUBSCRIBE with a higher value than the one in the request');
-          this.failed(response, SIP.C.INVALID_EXPIRES_HEADER);
+          this.failed(response, C.INVALID_EXPIRES_HEADER);
         }
       }
     } //Used to just ignore provisional responses; now ignores everything except errorCodes and 2xx
@@ -111,16 +117,16 @@ Subscription.prototype = {
     extraHeaders.push('Expires: 0');
 
     extraHeaders.push('Contact: '+ this.contact);
-    extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(this.ua));
+    extraHeaders.push('Allow: '+ Utils.getAllowedMethods(this.ua));
 
-    this.request = new SIP.OutgoingRequest(this.method, this.request.to.uri.toString(), this.ua, null, extraHeaders);
+    this.request = new OutgoingRequest(this.method, this.request.to.uri.toString(), this.ua, null, extraHeaders);
 
     //MAYBE, may want to see state
     this.receiveResponse = function(){};
 
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
-    SIP.Timers.clearTimeout(this.timers.N);
-    this.timers.N = SIP.Timers.setTimeout(sub.timer_fire.bind(sub), SIP.Timers.TIMER_N);
+    Timers.clearTimeout(this.timers.sub_duration);
+    Timers.clearTimeout(this.timers.N);
+    this.timers.N = Timers.setTimeout(sub.timer_fire.bind(sub), Timers.TIMER_N);
 
     this.send();
   },
@@ -148,8 +154,8 @@ Subscription.prototype = {
     }
 
     this.terminateDialog();
-    SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
+    Timers.clearTimeout(this.timers.N);
+    Timers.clearTimeout(this.timers.sub_duration);
 
     delete this.ua.subscriptions[this.id];
   },
@@ -161,7 +167,7 @@ Subscription.prototype = {
     var dialog;
 
     this.terminateDialog();
-    dialog = new SIP.Dialog(this, message, type);
+    dialog = new Dialog(this, message, type);
 
     if(!dialog.error) {
       this.dialog = dialog;
@@ -194,7 +200,7 @@ Subscription.prototype = {
       if (sub_state.expires) {
         sub_state.expires = Math.min(sub.expires,
                                      Math.max(sub_state.expires, 0));
-        sub.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub),
+        sub.timers.sub_duration = Timers.setTimeout(sub.subscribe.bind(sub),
                                                     sub_state.expires * 1000);
       }
     }
@@ -206,10 +212,10 @@ Subscription.prototype = {
 
     sub_state = request.parseHeader('Subscription-State');
 
-    request.reply(200, SIP.C.REASON_200);
+    request.reply(200, C.REASON_200);
 
-    SIP.Timers.clearTimeout(this.timers.N);
-    SIP.Timers.clearTimeout(this.timers.sub_duration);
+    Timers.clearTimeout(this.timers.N);
+    Timers.clearTimeout(this.timers.sub_duration);
 
     this.emit('notify', {request: request});
 
@@ -235,7 +241,7 @@ Subscription.prototype = {
             case 'probation':
             case 'giveup':
               if(sub_state.params && sub_state.params['retry-after']) {
-                this.timers.sub_duration = SIP.Timers.setTimeout(sub.subscribe.bind(sub), sub_state.params['retry-after']);
+                this.timers.sub_duration = Timers.setTimeout(sub.subscribe.bind(sub), sub_state.params['retry-after']);
               } else {
                 this.subscribe();
               }
@@ -284,7 +290,4 @@ Subscription.prototype = {
       return true;
     }
   }
-};
-
-return Subscription;
 };

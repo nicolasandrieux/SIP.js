@@ -1,10 +1,13 @@
+var Session = require('./Session');
 var C = require('./Constants');
+var Hacks = require('../Hacks');
+var Exceptions = require('../Exceptions');
+var Utils = require('../Utils');
+var ClientContext = require('../ClientContext');
+var Timers = require('../Timers');
+var UA = require('../UA');
 
-module.exports = function (SIP) {
-
-var Session = require('./Session')(SIP);
-
-var InviteClientContext = function(ua, target, options) {
+var InviteClientContext = module.exports = function(ua, target, options) {
   options = options || {};
   var requestParams, iceServers,
     extraHeaders = (options.extraHeaders || []).slice(),
@@ -14,7 +17,7 @@ var InviteClientContext = function(ua, target, options) {
 
   // Check WebRTC support
   if (isMediaSupported && !isMediaSupported()) {
-    throw new SIP.Exceptions.NotSupportedError('Media not supported');
+    throw new Exceptions.NotSupportedError('Media not supported');
   }
 
   this.RTCConstraints = options.RTCConstraints || {};
@@ -45,7 +48,7 @@ var InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Privacy: id');
   }
   extraHeaders.push('Contact: '+ this.contact);
-  extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
+  extraHeaders.push('Allow: '+ Utils.getAllowedMethods(ua));
   if (!this.inviteWithoutSdp) {
     extraHeaders.push('Content-Type: application/sdp');
   } else if (this.renderbody) {
@@ -53,29 +56,29 @@ var InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Content-Disposition: render;handling=optional');
   }
 
-  if (ua.configuration.rel100 === SIP.C.supported.REQUIRED) {
+  if (ua.configuration.rel100 === C.supported.REQUIRED) {
     extraHeaders.push('Require: 100rel');
   }
 
   options.extraHeaders = extraHeaders;
   options.params = requestParams;
 
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
-  SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
+  Utils.augment(this, ClientContext, [ua, C.INVITE, target, options]);
+  Utils.augment(this, Session, [ua.configuration.mediaHandlerFactory]);
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
-    throw new SIP.Exceptions.InvalidStateError(this.status);
+    throw new Exceptions.InvalidStateError(this.status);
   }
 
   // Session parameter initialization
-  this.from_tag = SIP.Utils.newTag();
+  this.from_tag = Utils.newTag();
 
   // OutgoingSession specific parameters
   this.isCanceled = false;
   this.received_100 = false;
 
-  this.method = SIP.C.INVITE;
+  this.method = C.INVITE;
 
   this.receiveNonInviteResponse = this.receiveResponse;
   this.receiveResponse = this.receiveInviteResponse;
@@ -83,7 +86,7 @@ var InviteClientContext = function(ua, target, options) {
   this.logger = ua.getLogger('sip.inviteclientcontext');
 
   if (stunServers) {
-    iceServers = SIP.UA.configuration_check.optional['stunServers'](stunServers);
+    iceServers = UA.configuration_check.optional['stunServers'](stunServers);
     if (!iceServers) {
       throw new TypeError('Invalid stunServers: '+ stunServers);
     } else {
@@ -92,7 +95,7 @@ var InviteClientContext = function(ua, target, options) {
   }
 
   if (turnServers) {
-    iceServers = SIP.UA.configuration_check.optional['turnServers'](turnServers);
+    iceServers = UA.configuration_check.optional['turnServers'](turnServers);
     if (!iceServers) {
       throw new TypeError('Invalid turnServers: '+ turnServers);
     } else {
@@ -119,13 +122,13 @@ var InviteClientContext = function(ua, target, options) {
 
 InviteClientContext.prototype = {
   /*
-   * @param {Object} [options.media] gets passed to SIP.MediaHandler.getDescription as mediaHint
+   * @param {Object} [options.media] gets passed to MediaHandler.getDescription as mediaHint
    */
   invite: function (options) {
     var self = this;
     options = options || {};
 
-    SIP.Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
+    Utils.optionsOverride(options, 'media', 'mediaConstraints', true, this.logger, this.ua.configuration.media);
     this.mediaHint = options.media;
 
     //Save the session into the ua sessions collection.
@@ -156,9 +159,9 @@ InviteClientContext.prototype = {
             return;
           }
           // TODO...fail out
-          //self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
-          //self.failed(null, SIP.C.causes.WEBRTC_ERROR);
-          self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          //self.failed(null, C.causes.USER_DENIED_MEDIA_ACCESS);
+          //self.failed(null, C.causes.WEBRTC_ERROR);
+          self.failed(null, C.causes.WEBRTC_ERROR);
         }
       );
     }
@@ -173,7 +176,7 @@ InviteClientContext.prototype = {
       extraHeaders = [],
       options = {};
 
-    if (this.status === C.STATUS_TERMINATED || response.method !== SIP.C.INVITE) {
+    if (this.status === C.STATUS_TERMINATED || response.method !== C.INVITE) {
       return;
     }
 
@@ -182,22 +185,22 @@ InviteClientContext.prototype = {
         if (!this.createDialog(response, 'UAC', true)) {
           return;
         }
-        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK,
+        this.earlyDialogs[id].sendRequest(this, C.ACK,
                                           {
-                                            body: SIP.Utils.generateFakeSDP(response.body)
+                                            body: Utils.generateFakeSDP(response.body)
                                           });
-        this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
+        this.earlyDialogs[id].sendRequest(this, C.BYE);
 
         /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
          * leg (due to peerConnection limitations) has been answered first. If your forking
          * proxy does not hang up all unanswered branches on the first branch answered, remove this.
          */
         if(this.status !== C.STATUS_CONFIRMED) {
-          this.failed(response, SIP.C.causes.WEBRTC_ERROR);
+          this.failed(response, C.causes.WEBRTC_ERROR);
         }
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
-        this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
+        this.sendRequest(C.ACK,{cseq: response.cseq});
         return;
       } else if (!this.hasAnswer) {
         // invite w/o sdp is waiting for callback
@@ -218,9 +221,9 @@ InviteClientContext.prototype = {
       extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
       this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
 
-      this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
+      this.earlyDialogs[id].sendRequest(this, C.PRACK, {
         extraHeaders: extraHeaders,
-        body: SIP.Utils.generateFakeSDP(response.body)
+        body: Utils.generateFakeSDP(response.body)
       });
       return;
     }
@@ -271,13 +274,13 @@ InviteClientContext.prototype = {
             return;
           }
 
-          SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
-          SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
+          Hacks.Firefox.cannotHandleRelayCandidates(response);
+          Hacks.Firefox.cannotHandleExtraWhitespace(response);
 
           if (!response.body) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-            this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
+            this.earlyDialogs[id].sendRequest(this, C.PRACK, {
               extraHeaders: extraHeaders
             });
             this.emit('progress', response);
@@ -293,7 +296,7 @@ InviteClientContext.prototype = {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
                 session.dialog.pracked.push(response.getHeader('rseq'));
 
-                session.sendRequest(SIP.C.PRACK, {
+                session.sendRequest(C.PRACK, {
                   extraHeaders: extraHeaders,
                   receiveResponse: function() {}
                 });
@@ -314,7 +317,7 @@ InviteClientContext.prototype = {
               function onFailure (e) {
                 session.logger.warn(e);
                 session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-                session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                session.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
               }
             );
           } else {
@@ -328,7 +331,7 @@ InviteClientContext.prototype = {
             .then(function onSuccess(sdp) {
               extraHeaders.push('Content-Type: application/sdp');
               extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-              earlyDialog.sendRequest(session, SIP.C.PRACK, {
+              earlyDialog.sendRequest(session, C.PRACK, {
                 extraHeaders: extraHeaders,
                 body: sdp
               });
@@ -336,14 +339,14 @@ InviteClientContext.prototype = {
               session.emit('progress', response);
             })
             .catch(function onFailure(e) {
-              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+              if (e instanceof Exceptions.GetDescriptionError) {
                 earlyDialog.pracked.push(response.getHeader('rseq'));
                 if (session.status === C.STATUS_TERMINATED) {
                   return;
                 }
                 // TODO - fail out on error
                 // session.failed(gum error);
-                session.failed(null, SIP.C.causes.WEBRTC_ERROR);
+                session.failed(null, C.causes.WEBRTC_ERROR);
               } else {
                 earlyDialog.pracked.splice(earlyDialog.pracked.indexOf(response.getHeader('rseq')), 1);
                 // Could not set remote description
@@ -379,7 +382,7 @@ InviteClientContext.prototype = {
             options.body = this.renderbody;
           }
           options.cseq = response.cseq;
-          this.sendRequest(SIP.C.ACK, options);
+          this.sendRequest(C.ACK, options);
           this.accepted(response);
           break;
         }
@@ -388,8 +391,8 @@ InviteClientContext.prototype = {
           break;
         }
 
-        SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
-        SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
+        Hacks.Firefox.cannotHandleRelayCandidates(response);
+        Hacks.Firefox.cannotHandleExtraWhitespace(response);
 
         // This is an invite without sdp
         if (!this.hasOffer) {
@@ -402,7 +405,7 @@ InviteClientContext.prototype = {
               break;
             }
             this.status = C.STATUS_CONFIRMED;
-            this.sendRequest(SIP.C.ACK, {cseq:response.cseq});
+            this.sendRequest(C.ACK, {cseq:response.cseq});
 
             this.unmute();
             /*
@@ -417,7 +420,7 @@ InviteClientContext.prototype = {
           } else {
             if(!response.body) {
               this.acceptAndTerminate(response, 400, 'Missing session description');
-              this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
               break;
             }
             if (!this.createDialog(response, 'UAC')) {
@@ -432,7 +435,7 @@ InviteClientContext.prototype = {
                 return;
               }
 
-              sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
+              sdp = Hacks.Firefox.hasMissingCLineInSDP(sdp);
 
               session.status = C.STATUS_CONFIRMED;
               session.hasAnswer = true;
@@ -445,7 +448,7 @@ InviteClientContext.prototype = {
               if (localMedia.getVideoTracks().length > 0) {
                 localMedia.getVideoTracks()[0].enabled = true;
               }*/
-              session.sendRequest(SIP.C.ACK,{
+              session.sendRequest(C.ACK,{
                 body: sdp,
                 extraHeaders:['Content-Type: application/sdp'],
                 cseq:response.cseq
@@ -453,7 +456,7 @@ InviteClientContext.prototype = {
               session.accepted(response);
             })
             .catch(function onFailure(e) {
-              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+              if (e instanceof Exceptions.GetDescriptionError) {
                 // TODO do something here
                 session.logger.warn("there was a problem");
               } else {
@@ -469,11 +472,11 @@ InviteClientContext.prototype = {
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          this.sendRequest(SIP.C.ACK, options);
+          this.sendRequest(C.ACK, options);
         } else {
           if(!response.body) {
             this.acceptAndTerminate(response, 400, 'Missing session description');
-            this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
             break;
           }
           if (!this.createDialog(response, 'UAC')) {
@@ -499,19 +502,19 @@ InviteClientContext.prototype = {
                 options.body = session.renderbody;
               }
               options.cseq = response.cseq;
-              session.sendRequest(SIP.C.ACK, options);
+              session.sendRequest(C.ACK, options);
               session.accepted(response);
             },
             function onFailure (e) {
               session.logger.warn(e);
               session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-              session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              session.failed(response, C.causes.BAD_MEDIA_DESCRIPTION);
             }
           );
         }
         break;
       default:
-        cause = SIP.Utils.sipErrorCause(response.status_code);
+        cause = Utils.sipErrorCause(response.status_code);
         this.failed(response, cause);
         this.rejected(response, cause);
     }
@@ -522,12 +525,12 @@ InviteClientContext.prototype = {
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.logger.log('canceling RTCSession');
 
-    var cancel_reason = SIP.Utils.getCancelReason(options.status_code, options.reason_phrase);
+    var cancel_reason = Utils.getCancelReason(options.status_code, options.reason_phrase);
 
     // Check Session Status
     if (this.status === C.STATUS_NULL ||
@@ -561,13 +564,13 @@ InviteClientContext.prototype = {
     // ICC RECEIVE REQUEST
 
     // Reject CANCELs
-    if (request.method === SIP.C.CANCEL) {
+    if (request.method === C.CANCEL) {
       // TODO; make this a switch when it gets added
     }
 
-    if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
-      SIP.Timers.clearTimeout(this.timers.ackTimer);
-      SIP.Timers.clearTimeout(this.timers.invite2xxTimer);
+    if (request.method === C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
+      Timers.clearTimeout(this.timers.ackTimer);
+      Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;
       this.unmute();
 
@@ -576,8 +579,4 @@ InviteClientContext.prototype = {
 
     return Session.prototype.receiveRequest.apply(this, [request]);
   }
-};
-
-return InviteClientContext;
-
 };

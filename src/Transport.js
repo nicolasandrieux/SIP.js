@@ -2,13 +2,20 @@
  * @fileoverview Transport
  */
 
+var Timers = require('./Timers');
+var Parser = require('./Parser');
+var UA = require('./UA');
+var sanityCheck = require('./SanityCheck');
+var IncomingRequest = require('./SIPMessage/IncomingRequest');
+var IncomingResponse = require('./SIPMessage/IncomingResponse');
+var WebSocket = global.WebSocket;
+
 /**
  * @augments SIP
  * @class Transport
- * @param {SIP.UA} ua
+ * @param {UA} ua
  * @param {Object} server ws_server Object
  */
-module.exports = function (SIP, WebSocket) {
 var Transport,
   C = {
     // Transport status codes
@@ -17,7 +24,7 @@ var Transport,
     STATUS_ERROR:        2
   };
 
-Transport = function(ua, server) {
+Transport = module.exports = function(ua, server) {
 
   this.logger = ua.getLogger('sip.transport');
   this.ua = ua;
@@ -38,7 +45,7 @@ Transport = function(ua, server) {
 Transport.prototype = {
   /**
    * Send a message.
-   * @param {SIP.OutgoingRequest|String} msg
+   * @param {OutgoingRequest|String} msg
    * @returns {Boolean}
    */
   send: function(msg) {
@@ -62,7 +69,7 @@ Transport.prototype = {
   disconnect: function() {
     if(this.ws) {
       // Clear reconnectTimer
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      Timers.clearTimeout(this.reconnectTimer);
 
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
@@ -70,7 +77,7 @@ Transport.prototype = {
     }
 
     if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      Timers.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
       this.ua.emit('disconnected', {
         transport: this,
@@ -136,7 +143,7 @@ Transport.prototype = {
     this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
     // Clear reconnectTimer since we are not disconnected
     if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      Timers.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
     // Reset reconnection_attempts
@@ -219,34 +226,34 @@ Transport.prototype = {
       }
     }
 
-    message = SIP.Parser.parseMessage(data, this.ua);
+    message = Parser.parseMessage(data, this.ua);
 
     if (!message) {
       return;
     }
 
-    if(this.ua.status === SIP.UA.C.STATUS_USER_CLOSED && message instanceof SIP.IncomingRequest) {
+    if(this.ua.status === UA.C.STATUS_USER_CLOSED && message instanceof IncomingRequest) {
       return;
     }
 
     // Do some sanity check
-    if(SIP.sanityCheck(message, this.ua, this)) {
-      if(message instanceof SIP.IncomingRequest) {
+    if(sanityCheck(message, this.ua, this)) {
+      if(message instanceof IncomingRequest) {
         message.transport = this;
         this.ua.receiveRequest(message);
-      } else if(message instanceof SIP.IncomingResponse) {
+      } else if(message instanceof IncomingResponse) {
         /* Unike stated in 18.1.2, if a response does not match
         * any transaction, it is discarded here and no passed to the core
         * in order to be discarded there.
         */
         switch(message.method) {
-          case SIP.C.INVITE:
+          case C.INVITE:
             transaction = this.ua.transactions.ict[message.via_branch];
             if(transaction) {
               transaction.receiveResponse(message);
             }
             break;
-          case SIP.C.ACK:
+          case C.ACK:
             // Just in case ;-)
             break;
           default:
@@ -283,7 +290,7 @@ Transport.prototype = {
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
-      this.reconnectTimer = SIP.Timers.setTimeout(function() {
+      this.reconnectTimer = Timers.setTimeout(function() {
         transport.connect();
         transport.reconnectTimer = null;
       }, this.ua.configuration.wsServerReconnectionTimeout * 1000);
@@ -292,5 +299,3 @@ Transport.prototype = {
 };
 
 Transport.C = C;
-return Transport;
-};

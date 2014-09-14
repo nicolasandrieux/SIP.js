@@ -1,18 +1,21 @@
+var UA = require('../UA');
+var NameAddrHeader = require('../NameAddrHeader');
+var Utils = require('../Utils');
+var C = require('../Constants');
+
 /**
  * @augments SIP
  * @class Class for outgoing SIP request.
  * @param {String} method request method
  * @param {String} ruri request uri
- * @param {SIP.UA} ua
+ * @param {UA} ua
  * @param {Object} params parameters that will have priority over ua.configuration parameters:
  * <br>
  *  - cseq, call_id, from_tag, from_uri, from_displayName, to_uri, to_tag, route_set
  * @param {Object} [headers] extra headers
  * @param {String} [body]
  */
-module.exports = function (SIP) {
-
-var OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
+var OutgoingRequest = module.exports = function(method, ruri, ua, params, extraHeaders, body) {
   var
     to,
     from,
@@ -50,13 +53,13 @@ var OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
   this.setHeader('via', '');
 
   // Max-Forwards
-  this.setHeader('max-forwards', SIP.UA.C.MAX_FORWARDS);
+  this.setHeader('max-forwards', UA.C.MAX_FORWARDS);
 
   // To
   to = (params.to_displayName || params.to_displayName === 0) ? '"' + params.to_displayName + '" ' : '';
   to += '<' + (params.to_uri || ruri) + '>';
   to += params.to_tag ? ';tag=' + params.to_tag : '';
-  this.to = new SIP.NameAddrHeader.parse(to);
+  this.to = new NameAddrHeader.parse(to);
   this.setHeader('to', to);
 
   // From
@@ -68,12 +71,12 @@ var OutgoingRequest = function(method, ruri, ua, params, extraHeaders, body) {
     from = '';
   }
   from += '<' + (params.from_uri || ua.configuration.uri) + '>;tag=';
-  from += params.from_tag || SIP.Utils.newTag();
-  this.from = new SIP.NameAddrHeader.parse(from);
+  from += params.from_tag || Utils.newTag();
+  this.from = new NameAddrHeader.parse(from);
   this.setHeader('from', from);
 
   // Call-ID
-  call_id = params.call_id || (ua.configuration.sipjsId + SIP.Utils.createRandomToken(15));
+  call_id = params.call_id || (ua.configuration.sipjsId + Utils.createRandomToken(15));
   this.call_id = call_id;
   this.setHeader('call-id', call_id);
 
@@ -90,7 +93,7 @@ OutgoingRequest.prototype = {
    * @param {String | Array} value header value
    */
   setHeader: function(name, value) {
-    this.headers[SIP.Utils.headerize(name)] = (value instanceof Array) ? value : [value];
+    this.headers[Utils.headerize(name)] = (value instanceof Array) ? value : [value];
   },
 
   /**
@@ -101,7 +104,7 @@ OutgoingRequest.prototype = {
   getHeader: function(name) {
     var regexp, idx,
       length = this.extraHeaders.length,
-      header = this.headers[SIP.Utils.headerize(name)];
+      header = this.headers[Utils.headerize(name)];
 
     if(header) {
       if(header[0]) {
@@ -127,7 +130,7 @@ OutgoingRequest.prototype = {
    */
   getHeaders: function(name) {
     var idx, length, regexp,
-      header = this.headers[SIP.Utils.headerize(name)],
+      header = this.headers[Utils.headerize(name)],
       result = [];
 
     if(header) {
@@ -158,7 +161,7 @@ OutgoingRequest.prototype = {
     var regexp, idx,
       length = this.extraHeaders.length;
 
-    if (this.headers[SIP.Utils.headerize(name)]) {
+    if (this.headers[Utils.headerize(name)]) {
       return true;
     } else {
       regexp = new RegExp('^\\s*' + name + '\\s*:','i');
@@ -190,14 +193,14 @@ OutgoingRequest.prototype = {
     }
 
     //Supported
-    if (this.method === SIP.C.REGISTER) {
+    if (this.method === C.REGISTER) {
       supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE &&
+    } else if (this.method === C.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
       supported.push('gruu');
     }
 
-    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+    if (this.ua.configuration.rel100 === C.supported.SUPPORTED) {
       supported.push('100rel');
     }
 
@@ -207,7 +210,7 @@ OutgoingRequest.prototype = {
     msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
     if(this.body) {
-      length = SIP.Utils.str_utf8_length(this.body);
+      length = Utils.str_utf8_length(this.body);
       msg += 'Content-Length: ' + length + '\r\n\r\n';
       msg += this.body;
     } else {
@@ -216,8 +219,4 @@ OutgoingRequest.prototype = {
 
     return msg;
   }
-};
-
-return OutgoingRequest;
-
 };

@@ -2,12 +2,14 @@
  * @fileoverview Utils
  */
 
+var UA = require('./UA');
+var Grammar = require('./Grammar/dist/Grammar');
+var URI = require('./URI');
+var C = require('./Constants');
+
 var promise = global.Promise || require('promiscuous');
 
-module.exports = function (SIP) {
-var Utils;
-
-Utils= {
+var Utils = module.exports = {
 
   Promise: promise,
 
@@ -123,7 +125,7 @@ Utils= {
   },
 
   newTag: function() {
-    return SIP.Utils.createRandomToken(SIP.UA.C.TAG_LENGTH);
+    return Utils.createRandomToken(UA.C.TAG_LENGTH);
   },
 
   // http://stackoverflow.com/users/109538/broofa
@@ -140,7 +142,7 @@ Utils= {
     if (!host) {
       return;
     } else {
-      host = SIP.Grammar.parse(host,'host');
+      host = Grammar.parse(host,'host');
       if (host !== -1) {
         return host.host_type;
       }
@@ -163,8 +165,8 @@ Utils= {
     // If no target is given then raise an error.
     if (!target) {
       return;
-    // If a SIP.URI instance is given then return it.
-    } else if (target instanceof SIP.URI) {
+    // If a URI instance is given then return it.
+    } else if (target instanceof URI) {
       return target;
 
     // If a string is given split it by '@':
@@ -199,10 +201,10 @@ Utils= {
       }
 
       // Build the complete SIP URI.
-      target = SIP.C.SIP + ':' + SIP.Utils.escapeUser(target_user) + '@' + target_domain;
+      target = C.SIP + ':' + Utils.escapeUser(target_user) + '@' + target_domain;
 
       // Finally parse the resulting URI.
-      if (uri = SIP.URI.parse(target)) {
+      if (uri = URI.parse(target)) {
         return uri;
       } else {
         return;
@@ -249,21 +251,21 @@ Utils= {
   sipErrorCause: function(status_code) {
     var cause;
 
-    for (cause in SIP.C.SIP_ERROR_CAUSES) {
-      if (SIP.C.SIP_ERROR_CAUSES[cause].indexOf(status_code) !== -1) {
-        return SIP.C.causes[cause];
+    for (cause in C.SIP_ERROR_CAUSES) {
+      if (C.SIP_ERROR_CAUSES[cause].indexOf(status_code) !== -1) {
+        return C.causes[cause];
       }
     }
 
-    return SIP.C.causes.SIP_FAILURE_CODE;
+    return C.causes.SIP_FAILURE_CODE;
   },
 
   getReasonPhrase: function getReasonPhrase (code, specific) {
-    return specific || SIP.C.REASON_PHRASE[code] || '';
+    return specific || C.REASON_PHRASE[code] || '';
   },
 
   getReasonHeaderValue: function getReasonHeaderValue (code, reason) {
-    reason = SIP.Utils.getReasonPhrase(code, reason);
+    reason = Utils.getReasonPhrase(code, reason);
     return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
   },
 
@@ -271,7 +273,7 @@ Utils= {
     if (code && code < 200 || code > 699) {
       throw new TypeError('Invalid status_code: ' + code);
     } else if (code) {
-      return SIP.Utils.getReasonHeaderValue(code, reason);
+      return Utils.getReasonHeaderValue(code, reason);
     }
   },
 
@@ -304,11 +306,11 @@ Utils= {
 
   getAllowedMethods: function(ua) {
     var event,
-      allowed = SIP.UA.C.ALLOWED_METHODS.toString();
+      allowed = UA.C.ALLOWED_METHODS.toString();
 
-    for (event in SIP.UA.C.EVENT_METHODS) {
+    for (event in UA.C.EVENT_METHODS) {
       if (ua.checkListener(event)) {
-        allowed += ','+ SIP.UA.C.EVENT_METHODS[event];
+        allowed += ','+ UA.C.EVENT_METHODS[event];
       }
     }
 
@@ -523,7 +525,4 @@ Utils= {
 
     return temp.toLowerCase();
   }
-};
-
-return Utils;
 };
