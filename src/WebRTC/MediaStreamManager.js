@@ -40,17 +40,24 @@ MediaStreamManager.streamId = function (stream) {
 };
 
 /**
- * @param {MediaStream} stream - The stream to render
+ * @param {(Array of) MediaStream} streams - The streams to render
  *
  * @param {(Array of) HTMLMediaElement} elements
- *        - The <audio>/<video> element(s) that should render the stream
+ *        - The <audio>/<video> element(s) that should render the streams
+ *
+ * Each stream in streams renders to the corresponding element in elements,
+ * wrapping around elements if needed.
  */
-MediaStreamManager.render = function render (stream, elements) {
+MediaStreamManager.render = function render (streams, elements) {
   if (!elements) {
     return false;
   }
+  if (Array.isArray(elements) && !elements.length) {
+    throw new TypeError('elements must not be empty');
+  }
 
-  function attachAndPlay (stream, element) {
+  function attachAndPlay (elements, stream, index) {
+    var element = elements[index % elements.length];
     (global.attachMediaStream || attachMediaStream)(element, stream);
     ensureMediaPlaying(element);
   }
@@ -82,17 +89,21 @@ MediaStreamManager.render = function render (stream, elements) {
 
   // [].concat "casts" `elements` into an array
   // so forEach works even if `elements` was a single element
-  [].concat(elements).forEach(attachAndPlay.bind(null, stream));
+  elements = [].concat(elements);
+  [].concat(streams).forEach(attachAndPlay.bind(null, elements));
 };
 
 MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
   'acquire': {value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
-    var saveSuccess = function (isHintStream, stream) {
-      var streamId = MediaStreamManager.streamId(stream);
-      this.acquisitions[streamId] = !!isHintStream;
-      return SIP.Utils.Promise.resolve(stream);
+    var saveSuccess = function (isHintStream, streams) {
+      streams = [].concat(streams);
+      streams.forEach(function (stream) {
+        var streamId = MediaStreamManager.streamId(stream);
+        this.acquisitions[streamId] = !!isHintStream;
+      }, this);
+      return SIP.Utils.Promise.resolve(streams);
     }.bind(this);
 
     if (mediaHint.stream) {
@@ -135,12 +146,15 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     }
   }},
 
-  'release': {value: function release (stream) {
-    var streamId = MediaStreamManager.streamId(stream);
-    if (this.acquisitions[streamId] === false) {
-      stream.stop();
-    }
-    delete this.acquisitions[streamId];
+  'release': {value: function release (streams) {
+    streams = [].concat(streams);
+    streams.forEach(function (stream) {
+      var streamId = MediaStreamManager.streamId(stream);
+      if (this.acquisitions[streamId] === false) {
+        stream.stop();
+      }
+      delete this.acquisitions[streamId];
+    }, this);
   }},
 });
 

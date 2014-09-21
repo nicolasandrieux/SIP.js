@@ -123,9 +123,9 @@ describe('MediaStreamManager', function () {
     beforeEach(function(done) {
       mediaStreamManager.acquire(
         {constraints: {audio: true}}).then(
-        function onSuccess (stream) {
-          acquiredStream = stream;
-          mediaStreamManager.release(stream);
+        function onSuccess (streams) {
+          acquiredStream = streams[0];
+          mediaStreamManager.release(streams);
           done();
         },
         function onFailure () {
@@ -156,7 +156,7 @@ describe('MediaStreamManager', function () {
     it('.acquire ignores constraints and succeeds with the stream', function (done) {
       mediaStreamManager.acquire(mediaHint).then(onSuccess, onFailure)
       .then(function () {
-      expect(onSuccess).toHaveBeenCalledWith(mediaHint.stream);
+      expect(onSuccess).toHaveBeenCalledWith([mediaHint.stream]);
       done();
       });
     });
