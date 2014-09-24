@@ -9,26 +9,26 @@ var C = require('./Constants');
 
 var promise = global.Promise || require('promiscuous');
 
-var Utils = module.exports = {
+var Utils = {};
+module.exports = Utils;
+Utils.Promise = promise;
 
-  Promise: promise,
-
-  defer: function defer () {
+Utils.defer = function defer () {
     var deferred = {};
     deferred.promise = new Utils.Promise(function (resolve, reject) {
       deferred.resolve = resolve;
       deferred.reject = reject;
     });
     return deferred;
-  },
+  };
 
-  callbacksLast: function callbacksLast (f, thisArg) {
+Utils.callbacksLast = function callbacksLast (f, thisArg) {
     return function (arg, onSuccess, onFailure) {
       return f.call(thisArg, onSuccess, onFailure, arg);
     };
-  },
+  };
 
-  addPromise: function addPromise (f, thisArg, length) {
+Utils.addPromise = function addPromise (f, thisArg, length) {
     var callbacksIndex = (length || f.length) - 2;
     return function withPromise () {
       var nonCallbacks = [].slice.call(arguments, 0, callbacksIndex);
@@ -40,9 +40,9 @@ var Utils = module.exports = {
       }
       return promise;
     };
-  },
+  };
 
-  augment: function (object, constructor, args, override) {
+Utils.augment = function (object, constructor, args, override) {
     var idx, proto;
 
     // Add public properties from constructor's prototype onto object
@@ -55,9 +55,9 @@ var Utils = module.exports = {
 
     // Construct the object as though it were just created by constructor
     constructor.apply(object, args);
-  },
+  };
 
-  optionsOverride: function (options, winner, loser, isDeprecated, logger, defaultValue) {
+Utils.optionsOverride = function (options, winner, loser, isDeprecated, logger, defaultValue) {
     if (isDeprecated && options[loser]) {
       logger.warn(loser + ' is deprecated, please use ' + winner + ' instead');
     }
@@ -67,13 +67,13 @@ var Utils = module.exports = {
     }
 
     options[winner] = options[winner] || options[loser] || defaultValue;
-  },
+  };
 
-  str_utf8_length: function(string) {
+Utils.str_utf8_length = function(string) {
     return encodeURIComponent(string).replace(/%[A-F\d]{2}/g, 'U').length;
-  },
+  };
 
-  getPrefixedProperty: function (object, name) {
+Utils.getPrefixedProperty = function (object, name) {
     if (object == null) {
       return;
     }
@@ -85,9 +85,9 @@ var Utils = module.exports = {
         return property;
       }
     }
-  },
+  };
 
-  generateFakeSDP: function(body) {
+Utils.generateFakeSDP = function(body) {
     if (!body) {
       return;
     }
@@ -96,21 +96,21 @@ var Utils = module.exports = {
     var end = body.indexOf('\r\n', start);
 
     return 'v=0\r\n' + body.slice(start, end) + '\r\ns=-\r\nt=0 0\r\nc=IN IP4 0.0.0.0';
-  },
+  };
 
-  isFunction: function(fn) {
+Utils.isFunction = function(fn) {
     if (fn !== undefined) {
       return Object.prototype.toString.call(fn) === '[object Function]';
     } else {
       return false;
     }
-  },
+  };
 
-  isDecimal: function (num) {
+Utils.isDecimal = function (num) {
     return !isNaN(num) && (parseFloat(num) === parseInt(num,10));
-  },
+  };
 
-  createRandomToken: function(size, base) {
+Utils.createRandomToken = function(size, base) {
     var i, r,
       token = '';
 
@@ -122,23 +122,23 @@ var Utils = module.exports = {
     }
 
     return token;
-  },
+  };
 
-  newTag: function() {
+Utils.newTag = function() {
     return Utils.createRandomToken(UA.C.TAG_LENGTH);
-  },
+  };
 
   // http://stackoverflow.com/users/109538/broofa
-  newUUID: function() {
+Utils.newUUID = function() {
     var UUID =  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       var r = Math.random()*16|0, v = c === 'x' ? r : (r&0x3|0x8);
       return v.toString(16);
     });
 
     return UUID;
-  },
+  };
 
-  hostType: function(host) {
+Utils.hostType = function(host) {
     if (!host) {
       return;
     } else {
@@ -147,7 +147,7 @@ var Utils = module.exports = {
         return host.host_type;
       }
     }
-  },
+  };
 
   /**
   * Normalize SIP URI.
@@ -159,7 +159,7 @@ var Utils = module.exports = {
   * @param {String} target
   * @param {String} [domain]
   */
-  normalizeTarget: function(target, domain) {
+Utils.normalizeTarget = function(target, domain) {
     var uri, target_array, target_user, target_domain;
 
     // If no target is given then raise an error.
@@ -212,19 +212,19 @@ var Utils = module.exports = {
     } else {
       return;
     }
-  },
+  };
 
   /**
   * Hex-escape a SIP URI user.
   * @private
   * @param {String} user
   */
-  escapeUser: function(user) {
+Utils.escapeUser = function(user) {
     // Don't hex-escape ':' (%3A), '+' (%2B), '?' (%3F"), '/' (%2F).
     return encodeURIComponent(decodeURIComponent(user)).replace(/%3A/ig, ':').replace(/%2B/ig, '+').replace(/%3F/ig, '?').replace(/%2F/ig, '/');
-  },
+  };
 
-  headerize: function(string) {
+Utils.headerize = function(string) {
     var exceptions = {
       'Call-Id': 'Call-ID',
       'Cseq': 'CSeq',
@@ -246,9 +246,9 @@ var Utils = module.exports = {
       hname = exceptions[hname];
     }
     return hname;
-  },
+  };
 
-  sipErrorCause: function(status_code) {
+Utils.sipErrorCause = function(status_code) {
     var cause;
 
     for (cause in C.SIP_ERROR_CAUSES) {
@@ -258,26 +258,26 @@ var Utils = module.exports = {
     }
 
     return C.causes.SIP_FAILURE_CODE;
-  },
+  };
 
-  getReasonPhrase: function getReasonPhrase (code, specific) {
+Utils.getReasonPhrase = function getReasonPhrase (code, specific) {
     return specific || C.REASON_PHRASE[code] || '';
-  },
+  };
 
-  getReasonHeaderValue: function getReasonHeaderValue (code, reason) {
+Utils.getReasonHeaderValue = function getReasonHeaderValue (code, reason) {
     reason = Utils.getReasonPhrase(code, reason);
     return 'SIP ;cause=' + code + ' ;text="' + reason + '"';
-  },
+  };
 
-  getCancelReason: function getCancelReason (code, reason) {
+Utils.getCancelReason = function getCancelReason (code, reason) {
     if (code && code < 200 || code > 699) {
       throw new TypeError('Invalid status_code: ' + code);
     } else if (code) {
       return Utils.getReasonHeaderValue(code, reason);
     }
-  },
+  };
 
-  buildStatusLine: function buildStatusLine (code, reason) {
+Utils.buildStatusLine = function buildStatusLine (code, reason) {
     code = code || null;
     reason = reason || null;
 
@@ -291,20 +291,20 @@ var Utils = module.exports = {
     reason = Utils.getReasonPhrase(code, reason);
 
     return 'SIP/2.0 ' + code + ' ' + reason + '\r\n';
-  },
+  };
 
   /**
   * Generate a random Test-Net IP (http://tools.ietf.org/html/rfc5735)
   * @private
   */
-  getRandomTestNetIP: function() {
+Utils.getRandomTestNetIP = function() {
     function getOctet(from,to) {
       return Math.floor(Math.random()*(to-from+1)+from);
     }
     return '192.0.2.' + getOctet(1, 254);
-  },
+  };
 
-  getAllowedMethods: function(ua) {
+Utils.getAllowedMethods = function(ua) {
     var event,
       allowed = UA.C.ALLOWED_METHODS.toString();
 
@@ -315,10 +315,10 @@ var Utils = module.exports = {
     }
 
     return allowed;
-  },
+  };
 
   // MD5 (Message-Digest Algorithm) http://www.webtoolkit.info
-  calculateMD5: function(string) {
+Utils.calculateMD5 = function(string) {
     function RotateLeft(lValue, iShiftBits) {
       return (lValue<<iShiftBits) | (lValue>>>(32-iShiftBits));
     }
@@ -524,5 +524,4 @@ var Utils = module.exports = {
     var temp = WordToHex(a)+WordToHex(b)+WordToHex(c)+WordToHex(d);
 
     return temp.toLowerCase();
-  }
-};
+  };
