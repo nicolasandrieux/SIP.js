@@ -1,5 +1,6 @@
 /*jshint multistr:true, devel:true*/
 /*global module:false*/
+var webpack = require('webpack');
 
 module.exports = function(grunt) {
 
@@ -46,19 +47,25 @@ module.exports = function(grunt) {
     meta: {
       banner: banner
     },
-    browserify: {
+    webpack: {
       devel: {
-        src: 'src/SIP.js',
-        dest: 'dist/<%= name %>-<%= pkg.version %>.js'
-      },
-      options: {
-        bundleOptions: {
-          standalone: 'SIP'
+        entry: './src/SIP.js',
+        output: {
+          filename: './dist/<%= name %>-<%= pkg.version %>.js',
+          library: 'SIP',
+          libraryTarget: 'umd'
         },
-        postBundleCB: function (err, src, next) {
-          // prepend the banner
-          next(err, banner + src);
-        }
+        module: {
+          loaders: [
+            // allows require('../package.json') to work
+            { test: /\.json$/, loader: 'json-loader' }
+          ]
+        },
+        plugins: [
+          // needed for deterministic build (see http://git.io/m0tYLw)
+          new webpack.optimize.OccurenceOrderPlugin(),
+          new webpack.BannerPlugin(banner, {raw: true})
+        ]
       }
     },
     copy: {
@@ -154,7 +161,7 @@ module.exports = function(grunt) {
 
 
   // Load Grunt plugins.
-  grunt.loadNpmTasks('grunt-browserify');
+  grunt.loadNpmTasks('grunt-webpack');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -192,9 +199,9 @@ module.exports = function(grunt) {
   grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'uglify', 'copy']);
 
   // Task for building sip-devel.js (uncompressed).
-  grunt.registerTask('devel', ['jshint', 'browserify']);
+  grunt.registerTask('devel', ['jshint', 'quick']);
 
-  grunt.registerTask('quick', ['browserify']);
+  grunt.registerTask('quick', ['webpack']);
 
   // Test tasks.
   grunt.registerTask('test',['jasmine']);
