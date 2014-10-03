@@ -9,6 +9,25 @@ var
   IncomingRequest,
   IncomingResponse;
 
+function getSupportedHeader (request) {
+  var optionTags = [];
+
+  if (request.method === SIP.C.REGISTER) {
+    optionTags.push('path', 'gruu');
+  } else if (request.method === SIP.C.INVITE &&
+             (request.ua.contact.pub_gruu || request.ua.contact.temp_gruu)) {
+    optionTags.push('gruu');
+  }
+
+  if (request.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+    optionTags.push('100rel');
+  }
+
+  optionTags.push('outbound');
+
+  return 'Supported: ' + optionTags.join(', ') + '\r\n';
+}
+
 /**
  * @augments SIP
  * @class Class for outgoing SIP request.
@@ -182,7 +201,7 @@ OutgoingRequest.prototype = {
   },
 
   toString: function() {
-    var msg = '', header, length, idx, supported = [];
+    var msg = '', header, length, idx;
 
     msg += this.method + ' ' + this.ruri + ' SIP/2.0\r\n';
 
@@ -198,21 +217,7 @@ OutgoingRequest.prototype = {
       msg += this.extraHeaders[idx].trim() +'\r\n';
     }
 
-    //Supported
-    if (this.method === SIP.C.REGISTER) {
-      supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE &&
-               (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
-      supported.push('gruu');
-    }
-
-    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
-      supported.push('100rel');
-    }
-
-    supported.push('outbound');
-
-    msg += 'Supported: ' +  supported +'\r\n';
+    msg += getSupportedHeader(this);
     msg += 'User-Agent: ' + this.ua.configuration.userAgentString +'\r\n';
 
     if(this.body) {
@@ -407,7 +412,6 @@ IncomingRequest.prototype = new IncomingMessage();
 */
 IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onSuccess, onFailure) {
   var rr, vias, length, idx, response,
-  supported = [],
     to = this.getHeader('To'),
     r = 0,
     v = 0;
@@ -447,19 +451,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
     response += extraHeaders[idx].trim() +'\r\n';
   }
 
-  //Supported
-  if (this.method === SIP.C.INVITE &&
-               (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
-    supported.push('gruu');
-  }
-
-  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
-    supported.push('100rel');
-  }
-
-  supported.push('outbound');
-
-  response += 'Supported: ' + supported + '\r\n';
+  response += getSupportedHeader(this);
 
   if(body) {
     length = SIP.Utils.str_utf8_length(body);
