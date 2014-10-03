@@ -24,6 +24,7 @@ function getSupportedHeader (request) {
   }
 
   optionTags.push('outbound');
+  optionTags.push('timer');
 
   return 'Supported: ' + optionTags.join(', ') + '\r\n';
 }
