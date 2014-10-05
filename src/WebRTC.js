@@ -12,6 +12,20 @@ WebRTC = {};
 WebRTC.MediaHandler = require('./WebRTC/MediaHandler')(SIP);
 WebRTC.MediaStreamManager = require('./WebRTC/MediaStreamManager')(SIP);
 
+function getPrefixedProperty (object, name) {
+  if (object == null) {
+    return;
+  }
+  var capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+  var prefixedNames = [name, 'webkit' + capitalizedName, 'moz' + capitalizedName];
+  for (var i in prefixedNames) {
+    var property = object[prefixedNames[i]];
+    if (property) {
+      return property;
+    }
+  }
+}
+
 var _isSupported;
 
 WebRTC.isSupported = function () {
@@ -19,10 +33,10 @@ WebRTC.isSupported = function () {
     return _isSupported;
   }
 
-  WebRTC.MediaStream = SIP.Utils.getPrefixedProperty(global, 'MediaStream');
-  WebRTC.getUserMedia = SIP.Utils.getPrefixedProperty(global.navigator, 'getUserMedia');
-  WebRTC.RTCPeerConnection = SIP.Utils.getPrefixedProperty(global, 'RTCPeerConnection');
-  WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(global, 'RTCSessionDescription');
+  WebRTC.MediaStream = getPrefixedProperty(global, 'MediaStream');
+  WebRTC.getUserMedia = getPrefixedProperty(global.navigator, 'getUserMedia');
+  WebRTC.RTCPeerConnection = getPrefixedProperty(global, 'RTCPeerConnection');
+  WebRTC.RTCSessionDescription = getPrefixedProperty(global, 'RTCSessionDescription');
 
   if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
     WebRTC.getUserMedia = addPromise(WebRTC.getUserMedia, global.navigator);
