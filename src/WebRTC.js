@@ -4,13 +4,10 @@
 
 var addPromise = require('./Utils/Promise/addPromise');
 
-module.exports = function (SIP) {
-var WebRTC;
+var WebRTC = module.exports = {};
 
-WebRTC = {};
-
-WebRTC.MediaHandler = require('./WebRTC/MediaHandler')(SIP);
-WebRTC.MediaStreamManager = require('./WebRTC/MediaStreamManager')(SIP);
+WebRTC.MediaHandler = require('./WebRTC/MediaHandler');
+WebRTC.MediaStreamManager = require('./WebRTC/MediaStreamManager');
 
 function getPrefixedProperty (object, name) {
   if (object == null) {
@@ -46,7 +43,4 @@ WebRTC.isSupported = function () {
     _isSupported = false;
   }
   return _isSupported;
-};
-
-return WebRTC;
 };

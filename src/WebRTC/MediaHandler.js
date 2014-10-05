@@ -6,6 +6,12 @@ var SIPPromise = require('../Utils/Promise');
 var defer = require('../Utils/Promise/defer');
 var addPromise = require('../Utils/Promise/addPromise');
 
+var MediaStreamManager = require('./MediaStreamManager');
+var WebRTC = require('../WebRTC');
+var SIPMediaHandler = require('../MediaHandler');
+var Hacks = require('../Hacks');
+var Exceptions = require('../Exceptions');
+
 /* MediaHandler
  * @class PeerConnection helper Class.
  * @param {SIP.Session} session
@@ -14,16 +20,14 @@ var addPromise = require('../Utils/Promise/addPromise');
  *        The MediaStreamManager to acquire/release streams from/to.
  *        If not provided, a default MediaStreamManager will be used.
  */
-module.exports = function (SIP) {
-
-var MediaHandler = function(session, options) {
+var MediaHandler = module.exports = function(session, options) {
   options = options || {};
 
   this.logger = session.ua.getLogger('sip.invitecontext.mediahandler', session.id);
   this.session = session;
   this.localMedia = null;
   this.ready = true;
-  this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager(this.logger);
+  this.mediaStreamManager = options.mediaStreamManager || new MediaStreamManager(this.logger);
   this.audioMuted = false;
   this.videoMuted = false;
 
@@ -65,7 +69,7 @@ var MediaHandler = function(session, options) {
     self.emit('iceComplete', pc);
   });
 
-  this.peerConnection = new SIP.WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
+  this.peerConnection = new WebRTC.RTCPeerConnection({'iceServers': servers}, this.RTCConstraints);
 
   this.peerConnection.onaddstream = function(e) {
     self.logger.log('stream added: '+ e.stream.id);
@@ -144,10 +148,10 @@ MediaHandler.defaultFactory = function defaultFactory (session, options) {
   return new MediaHandler(session, options);
 };
 MediaHandler.defaultFactory.isSupported = function () {
-  return SIP.WebRTC.isSupported();
+  return WebRTC.isSupported();
 };
 
-MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
+MediaHandler.prototype = Object.create(SIPMediaHandler.prototype, {
 // Functions the session can use
   isReady: {writable: true, value: function isReady () {
     return this.ready;
@@ -243,7 +247,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
 
     this.emit('setDescription', rawDescription);
 
-    var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
+    var description = new WebRTC.RTCSessionDescription(rawDescription);
     return new SIPPromise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
   }},
 
@@ -380,7 +384,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       var streamGetter = streamGetters[loc];
       var streams = this[streamGetter]();
       if (streams.length) {
-        SIP.WebRTC.MediaStreamManager.render(streams[0], renderHint[loc]);
+        MediaStreamManager.render(streams[0], renderHint[loc]);
       }
     }.bind(this));
   }},
@@ -419,8 +423,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       .then(function readySuccess () {
         var sdp = pc.localDescription.sdp;
 
-        sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
-        sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
+        sdp = Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
+        sdp = Hacks.AllBrowsers.unmaskDtls(sdp);
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',
@@ -435,7 +439,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       .catch(function methodFailed (e) {
         self.logger.error(e);
         self.ready = true;
-        throw new SIP.Exceptions.GetDescriptionError(e);
+        throw new Exceptions.GetDescriptionError(e);
       })
     ;
   }},
@@ -468,7 +472,3 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.toggleMuteHelper('getVideoTracks', mute);
   }}
 });
-
-// Return since it will be assigned to a variable.
-return MediaHandler;
-};

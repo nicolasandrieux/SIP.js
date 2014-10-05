@@ -5,16 +5,19 @@
 var SIPPromise = require('../Utils/Promise');
 var defer = require('../Utils/Promise/defer');
 
+var WebRTC = require('../WebRTC');
+var Exceptions = require('../Exceptions');
+var Timers = require('../Timers');
+var EventEmitter = require('../EventEmitter');
+
 /* MediaStreamManager
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
  */
-module.exports = function (SIP) {
-
 // Default MediaStreamManager provides single-use streams created with getUserMedia
-var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) {
-  if (!SIP.WebRTC.isSupported()) {
-    throw new SIP.Exceptions.NotSupportedError('Media not supported');
+var MediaStreamManager = module.exports = function MediaStreamManager (logger, defaultMediaHint) {
+  if (!WebRTC.isSupported()) {
+    throw new Exceptions.NotSupportedError('Media not supported');
   }
 
   this.mediaHint = defaultMediaHint || {
@@ -59,12 +62,12 @@ MediaStreamManager.render = function render (stream, elements) {
 
   function ensureMediaPlaying (mediaElement) {
     var interval = 100;
-    mediaElement.ensurePlayingIntervalId = SIP.Timers.setInterval(function () {
+    mediaElement.ensurePlayingIntervalId = Timers.setInterval(function () {
       if (mediaElement.paused) {
         mediaElement.play();
       }
       else {
-        SIP.Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
+        Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
       }
     }, interval);
   }
@@ -80,7 +83,7 @@ MediaStreamManager.render = function render (stream, elements) {
   }
 };
 
-MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
+MediaStreamManager.prototype = Object.create(EventEmitter.prototype, {
   'acquire': {value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 
@@ -104,7 +107,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
        */
-      SIP.Timers.setTimeout(function () {
+      Timers.setTimeout(function () {
         this.emit('userMediaRequest', constraints);
 
         var emitThenCall = function (eventName, callback) {
@@ -118,7 +121,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         }.bind(this);
 
         deferred.resolve(
-          SIP.WebRTC.getUserMedia(constraints)
+          WebRTC.getUserMedia(constraints)
           .then(
             emitThenCall.bind(this, 'userMedia', saveSuccess.bind(null, false)),
             emitThenCall.bind(this, 'userMediaFailed', function(e){throw e;})
@@ -138,7 +141,3 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     delete this.acquisitions[streamId];
   }},
 });
-
-// Return since it will be assigned to a variable.
-return MediaStreamManager;
-};
