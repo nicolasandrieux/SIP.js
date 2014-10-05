@@ -2,6 +2,9 @@
  * @fileoverview MediaStreamManager
  */
 
+var SIPPromise = require('../Utils/Promise');
+var defer = require('../Utils/Promise/defer');
+
 /* MediaStreamManager
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
@@ -92,7 +95,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
     var saveSuccess = function (isHintStream, stream) {
       var streamId = MediaStreamManager.streamId(stream);
       this.acquisitions[streamId] = !!isHintStream;
-      return SIP.Utils.Promise.resolve(stream);
+      return SIPPromise.resolve(stream);
     }.bind(this);
 
     if (mediaHint.stream) {
@@ -103,7 +106,7 @@ MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
         (this.mediaHint && this.mediaHint.constraints) ||
         {audio: true, video: true};
 
-      var deferred = SIP.Utils.defer();
+      var deferred = defer();
 
       /*
        * Make the call asynchronous, so that ICCs have a chance

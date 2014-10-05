@@ -2,6 +2,8 @@
  * @fileoverview SIP Transactions
  */
 
+var defer = require('./Utils/Promise/defer');
+
 /**
  * SIP Transactions module.
  * @augments SIP
@@ -404,7 +406,7 @@ NonInviteServerTransaction.prototype.onTransportError = function() {
 
 NonInviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
-  var deferred = SIP.Utils.defer();
+  var deferred = defer();
 
   if(status_code === 100) {
     /* RFC 4320 4.1
@@ -542,7 +544,7 @@ InviteServerTransaction.prototype.resend_provisional = function() {
 // INVITE Server Transaction RFC 3261 17.2.1
 InviteServerTransaction.prototype.receiveResponse = function(status_code, response) {
   var tr = this;
-  var deferred = SIP.Utils.defer();
+  var deferred = defer();
 
   if(status_code >= 100 && status_code <= 199) {
     switch(this.state) {

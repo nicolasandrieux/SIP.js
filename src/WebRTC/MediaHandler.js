@@ -2,6 +2,10 @@
  * @fileoverview MediaHandler
  */
 
+var SIPPromise = require('../Utils/Promise');
+var defer = require('../Utils/Promise/defer');
+var addPromise = require('../Utils/Promise/addPromise');
+
 /* MediaHandler
  * @class PeerConnection helper Class.
  * @param {SIP.Session} session
@@ -69,7 +73,7 @@ var MediaHandler = function(session, options) {
     });
   }
 
-  this.onIceCompleted = SIP.Utils.defer();
+  this.onIceCompleted = defer();
   this.onIceCompleted.promise.then(function(pc) {
     self.logger.log('ICE Gathering Completed');
     self.emit('iceComplete', pc);
@@ -202,7 +206,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var streamPromise;
     if (self.localMedia) {
       self.logger.log('already have local media');
-      streamPromise = SIP.Utils.Promise.resolve(self.localMedia);
+      streamPromise = SIPPromise.resolve(self.localMedia);
     }
     else {
       self.logger.log('acquiring local media');
@@ -258,7 +262,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    return new SIP.Utils.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
+    return new SIPPromise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
   }},
 
 // Functions the session can use, but only because it's convenient for the application
@@ -410,17 +414,17 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     var self = this;
     var methodName, promisifiedMethod;
     var pc = self.peerConnection;
-    var setLocalDescription = SIP.Utils.addPromise(pc.setLocalDescription, pc, 3);
+    var setLocalDescription = addPromise(pc.setLocalDescription, pc, 3);
 
     self.ready = false;
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
-    promisifiedMethod = SIP.Utils.addPromise(SIP.Utils.callbacksLast(pc[methodName], pc));
+    promisifiedMethod = addPromise(SIP.Utils.callbacksLast(pc[methodName], pc));
 
     return promisifiedMethod(constraints)
       .then(setLocalDescription)
       .then(function onSetLocalDescriptionSuccess() {
-        var deferred = SIP.Utils.defer();
+        var deferred = defer();
         if (pc.iceGatheringState === 'complete' && (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed')) {
           deferred.resolve();
         } else {
@@ -458,10 +462,10 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     } catch(e) {
       this.logger.error('error adding stream');
       this.logger.error(e);
-      return SIP.Utils.Promise.reject(e);
+      return SIPPromise.reject(e);
     }
 
-    return SIP.Utils.Promise.resolve();
+    return SIPPromise.resolve();
   }},
 
   toggleMuteHelper: {writable: true, value: function toggleMuteHelper (trackGetter, mute) {

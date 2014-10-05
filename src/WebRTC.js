@@ -2,6 +2,8 @@
  * @fileoverview WebRTC
  */
 
+var addPromise = require('./Utils/Promise/addPromise');
+
 module.exports = function (SIP) {
 var WebRTC;
 
@@ -23,7 +25,7 @@ WebRTC.isSupported = function () {
   WebRTC.RTCSessionDescription = SIP.Utils.getPrefixedProperty(global, 'RTCSessionDescription');
 
   if (WebRTC.getUserMedia && WebRTC.RTCPeerConnection && WebRTC.RTCSessionDescription) {
-    WebRTC.getUserMedia = SIP.Utils.addPromise(WebRTC.getUserMedia, global.navigator);
+    WebRTC.getUserMedia = addPromise(WebRTC.getUserMedia, global.navigator);
     _isSupported = true;
   }
   else {
