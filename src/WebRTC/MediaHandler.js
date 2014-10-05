@@ -419,7 +419,9 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     self.ready = false;
 
     methodName = self.hasOffer('remote') ? 'createAnswer' : 'createOffer';
-    promisifiedMethod = addPromise(SIP.Utils.callbacksLast(pc[methodName], pc));
+    promisifiedMethod = addPromise(function callbacksLast (arg, onSuccess, onFailure) {
+      return pc[methodName](onSuccess, onFailure, arg);
+    });
 
     return promisifiedMethod(constraints)
       .then(setLocalDescription)

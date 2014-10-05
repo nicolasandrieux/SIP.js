@@ -9,12 +9,6 @@ Utils= {
 
   Promise: require('./Utils/Promise'), // should only be used by tests
 
-  callbacksLast: function callbacksLast (f, thisArg) {
-    return function (arg, onSuccess, onFailure) {
-      return f.call(thisArg, onSuccess, onFailure, arg);
-    };
-  },
-
   augment: function (object, constructor, args, override) {
     var idx, proto;
 
