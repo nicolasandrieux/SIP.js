@@ -4,6 +4,7 @@
 
 var EventEmitter = require('../EventEmitter');
 var Exceptions = require('../Exceptions');
+var Constants = require('../Constants');
 
 /**
  * @class DTMF
@@ -108,7 +109,7 @@ DTMF.prototype.send = function(options) {
   body = "Signal= " + this.tone + "\r\n";
   body += "Duration= " + this.duration;
 
-  this.request = this.owner.dialog.sendRequest(this, SIP.C.INFO, {
+  this.request = this.owner.dialog.sendRequest(this, Constants.INFO, {
     extraHeaders: extraHeaders,
     body: body
   });
@@ -145,7 +146,7 @@ DTMF.prototype.receiveResponse = function(response) {
  * @private
  */
 DTMF.prototype.onRequestTimeout = function() {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+  this.emit('failed', null, Constants.causes.REQUEST_TIMEOUT);
   this.owner.onRequestTimeout();
 };
 
@@ -153,7 +154,7 @@ DTMF.prototype.onRequestTimeout = function() {
  * @private
  */
 DTMF.prototype.onTransportError = function() {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
+  this.emit('failed', null, Constants.causes.CONNECTION_ERROR);
   this.owner.onTransportError();
 };
 
@@ -161,7 +162,7 @@ DTMF.prototype.onTransportError = function() {
  * @private
  */
 DTMF.prototype.onDialogError = function(response) {
-  this.emit('failed', response, SIP.C.causes.DIALOG_ERROR);
+  this.emit('failed', response, Constants.causes.DIALOG_ERROR);
   this.owner.onDialogError(response);
 };
 

@@ -3,6 +3,7 @@
  */
 
 var promise = global.Promise || require('promiscuous');
+var Constants = require('./Constants');
 
 module.exports = function (SIP) {
 var Utils;
@@ -199,7 +200,7 @@ Utils= {
       }
 
       // Build the complete SIP URI.
-      target = SIP.C.SIP + ':' + SIP.Utils.escapeUser(target_user) + '@' + target_domain;
+      target = Constants.SIP + ':' + SIP.Utils.escapeUser(target_user) + '@' + target_domain;
 
       // Finally parse the resulting URI.
       if (uri = SIP.URI.parse(target)) {
@@ -249,17 +250,17 @@ Utils= {
   sipErrorCause: function(status_code) {
     var cause;
 
-    for (cause in SIP.C.SIP_ERROR_CAUSES) {
-      if (SIP.C.SIP_ERROR_CAUSES[cause].indexOf(status_code) !== -1) {
-        return SIP.C.causes[cause];
+    for (cause in Constants.SIP_ERROR_CAUSES) {
+      if (Constants.SIP_ERROR_CAUSES[cause].indexOf(status_code) !== -1) {
+        return Constants.causes[cause];
       }
     }
 
-    return SIP.C.causes.SIP_FAILURE_CODE;
+    return Constants.causes.SIP_FAILURE_CODE;
   },
 
   getReasonPhrase: function getReasonPhrase (code, specific) {
-    return specific || SIP.C.REASON_PHRASE[code] || '';
+    return specific || Constants.REASON_PHRASE[code] || '';
   },
 
   getReasonHeaderValue: function getReasonHeaderValue (code, reason) {

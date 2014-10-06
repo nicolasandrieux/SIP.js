@@ -204,7 +204,7 @@ describe('Subscription', function() {
       Subscription.receiveResponse(response);
 
       expect(Subscription.logger.warn).toHaveBeenCalledWith('Expires header missing in a 200-class response to SUBSCRIBE');
-      expect(Subscription.failed).toHaveBeenCalledWith(response, SIP.C.EXPIRES_HEADER_MISSING);
+      expect(Subscription.failed).toHaveBeenCalledWith(response, SIP.Constants.EXPIRES_HEADER_MISSING);
     });
 
     it('calls close, failed, and warns if expires header was higher than original offer', function() {
@@ -231,7 +231,7 @@ describe('Subscription', function() {
       Subscription.receiveResponse(response);
 
       expect(Subscription.logger.warn).toHaveBeenCalledWith('Expires header in a 200-class response to SUBSCRIBE with a higher value than the one in the request');
-      expect(Subscription.failed).toHaveBeenCalledWith(response, SIP.C.INVALID_EXPIRES_HEADER);
+      expect(Subscription.failed).toHaveBeenCalledWith(response, SIP.Constants.INVALID_EXPIRES_HEADER);
     });
   });
 
@@ -480,7 +480,7 @@ describe('Subscription', function() {
     it('replies 200 if match event passes', function() {
       Subscription.receiveRequest(request);
 
-      expect(request.reply).toHaveBeenCalledWith(200, SIP.C.REASON_200);
+      expect(request.reply).toHaveBeenCalledWith(200, SIP.Constants.REASON_200);
     });
 
     it('clear both timers', function() {

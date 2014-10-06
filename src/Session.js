@@ -1,6 +1,7 @@
 var Timers = require('./Timers');
 var Exceptions = require('./Exceptions');
 var Hacks = require('./Hacks');
+var Constants = require('./Constants');
 
 module.exports = function (SIP) {
 
@@ -116,7 +117,7 @@ Session = function (mediaHandlerFactory) {
    };
 
   this.early_sdp = null;
-  this.rel100 = SIP.C.supported.UNSUPPORTED;
+  this.rel100 = Constants.supported.UNSUPPORTED;
 
   this.initMoreEvents(events);
 };
@@ -199,7 +200,7 @@ Session.prototype = {
     options.receiveResponse = function () {};
 
     return this.
-      sendRequest(SIP.C.BYE, options).
+      sendRequest(Constants.BYE, options).
       terminated();
   },
 
@@ -245,7 +246,7 @@ Session.prototype = {
     }
 
     // Send the request
-    this.sendRequest(SIP.C.REFER, {
+    this.sendRequest(Constants.REFER, {
       extraHeaders: extraHeaders,
       body: options.body,
       receiveResponse: function() {}
@@ -390,7 +391,7 @@ Session.prototype = {
         // Dialog has been successfully created.
         if(early_dialog.error) {
           this.logger.error(early_dialog.error);
-          this.failed(message, SIP.C.causes.INTERNAL_ERROR);
+          this.failed(message, Constants.causes.INTERNAL_ERROR);
           return false;
         } else {
           this.earlyDialogs[id] = early_dialog;
@@ -417,7 +418,7 @@ Session.prototype = {
 
       if(dialog.error) {
         this.logger.error(dialog.error);
-        this.failed(message, SIP.C.causes.INTERNAL_ERROR);
+        this.failed(message, Constants.causes.INTERNAL_ERROR);
         return false;
       } else {
         this.to_tag = message.to_tag;
@@ -627,7 +628,7 @@ Session.prototype = {
     .then(mangle)
     .then(
       function(body){
-        self.dialog.sendRequest(self, SIP.C.INVITE, {
+        self.dialog.sendRequest(self, Constants.INVITE, {
           extraHeaders: extraHeaders,
           body: body
         });
@@ -643,14 +644,14 @@ Session.prototype = {
 
   receiveRequest: function (request) {
     switch (request.method) {
-      case SIP.C.BYE:
+      case Constants.BYE:
         request.reply(200);
         if(this.status === C.STATUS_CONFIRMED) {
           this.emit('bye', request);
-          this.terminated(request, SIP.C.causes.BYE);
+          this.terminated(request, Constants.causes.BYE);
         }
         break;
-      case SIP.C.INVITE:
+      case Constants.INVITE:
         if(this.status === C.STATUS_CONFIRMED) {
           this.logger.log('re-INVITE received');
           // Switch these two lines to try re-INVITEs:
@@ -658,7 +659,7 @@ Session.prototype = {
           request.reply(488, null, ['Warning: 399 sipjs "Cannot update media description"']);
         }
         break;
-      case SIP.C.INFO:
+      case Constants.INFO:
         if(this.status === C.STATUS_CONFIRMED || this.status === C.STATUS_WAITING_FOR_ACK) {
           var body, tone, duration,
               contentType = request.getHeader('content-type'),
@@ -686,7 +687,7 @@ Session.prototype = {
           }
         }
         break;
-      case SIP.C.REFER:
+      case Constants.REFER:
         if(this.status ===  C.STATUS_CONFIRMED) {
           this.logger.log('REFER received');
           request.reply(202, 'Accepted');
@@ -698,7 +699,7 @@ Session.prototype = {
               'SIP/2.0 603 Declined'
           ;
 
-          this.sendRequest(SIP.C.NOTIFY, {
+          this.sendRequest(Constants.NOTIFY, {
             extraHeaders:[
               'Event: refer',
               'Subscription-State: terminated',
@@ -734,7 +735,7 @@ Session.prototype = {
       case /^2[0-9]{2}$/.test(response.status_code):
         this.status = C.STATUS_CONFIRMED;
 
-        this.sendRequest(SIP.C.ACK,{cseq:response.cseq});
+        this.sendRequest(Constants.ACK,{cseq:response.cseq});
 
         if(!response.body) {
           this.reinviteFailed();
@@ -769,8 +770,8 @@ Session.prototype = {
 
     // An error on dialog creation will fire 'failed' event
     if (this.dialog || this.createDialog(response, 'UAC')) {
-      this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
-      this.sendRequest(SIP.C.BYE, {
+      this.sendRequest(Constants.ACK,{cseq: response.cseq});
+      this.sendRequest(Constants.BYE, {
         extraHeaders: extraHeaders
       });
     }
@@ -814,8 +815,8 @@ Session.prototype = {
       if(self.status === C.STATUS_WAITING_FOR_ACK) {
         self.logger.log('no ACK received for an extended period of time, terminating the call');
         Timers.clearTimeout(self.timers.invite2xxTimer);
-        self.sendRequest(SIP.C.BYE);
-        self.terminated(null, SIP.C.causes.NO_ACK);
+        self.sendRequest(Constants.BYE);
+        self.terminated(null, Constants.causes.NO_ACK);
       }
     }, Timers.TIMER_H);
   },
@@ -835,25 +836,25 @@ Session.prototype = {
 
   onTransportError: function() {
     if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.CONNECTION_ERROR);
+      this.terminated(null, Constants.causes.CONNECTION_ERROR);
     } else if (this.status !== C.STATUS_TERMINATED) {
-      this.failed(null, SIP.C.causes.CONNECTION_ERROR);
+      this.failed(null, Constants.causes.CONNECTION_ERROR);
     }
   },
 
   onRequestTimeout: function() {
     if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.terminated(null, Constants.causes.REQUEST_TIMEOUT);
     } else if (this.status !== C.STATUS_TERMINATED) {
-      this.failed(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.failed(null, Constants.causes.REQUEST_TIMEOUT);
     }
   },
 
   onDialogError: function(response) {
     if (this.status === C.STATUS_CONFIRMED) {
-      this.terminated(response, SIP.C.causes.DIALOG_ERROR);
+      this.terminated(response, Constants.causes.DIALOG_ERROR);
     } else if (this.status !== C.STATUS_TERMINATED) {
-      this.failed(response, SIP.C.causes.DIALOG_ERROR);
+      this.failed(response, Constants.causes.DIALOG_ERROR);
     }
   },
 
@@ -985,8 +986,8 @@ InviteServerContext = function(ua, request) {
       self.rel100 = c;
     }
   }
-  set100rel('require', SIP.C.supported.REQUIRED);
-  set100rel('supported', SIP.C.supported.SUPPORTED);
+  set100rel('require', Constants.supported.REQUIRED);
+  set100rel('supported', Constants.supported.SUPPORTED);
 
   /* Set the to_tag before
    * replying a response code that will create a dialog.
@@ -1012,7 +1013,7 @@ InviteServerContext = function(ua, request) {
   function fireNewSession() {
     var options = {extraHeaders: ['Contact: ' + self.contact]};
 
-    if (self.rel100 !== SIP.C.supported.REQUIRED) {
+    if (self.rel100 !== Constants.supported.REQUIRED) {
       self.progress(options);
     }
     self.status = C.STATUS_WAITING_FOR_ANSWER;
@@ -1020,7 +1021,7 @@ InviteServerContext = function(ua, request) {
     // Set userNoAnswerTimer
     self.timers.userNoAnswerTimer = Timers.setTimeout(function() {
       request.reply(408);
-      self.failed(request, SIP.C.causes.NO_ANSWER);
+      self.failed(request, Constants.causes.NO_ANSWER);
     }, self.ua.configuration.noAnswerTimeout);
 
     /* Set expiresTimer
@@ -1030,7 +1031,7 @@ InviteServerContext = function(ua, request) {
       self.timers.expiresTimer = Timers.setTimeout(function() {
         if(self.status === C.STATUS_WAITING_FOR_ANSWER) {
           request.reply(487);
-          self.failed(request, SIP.C.causes.EXPIRES);
+          self.failed(request, Constants.causes.EXPIRES);
         }
       }, expires);
     }
@@ -1081,8 +1082,8 @@ InviteServerContext.prototype = {
       dialog = this.dialog;
 
       this.receiveRequest = function(request) {
-        if (request.method === SIP.C.ACK) {
-          this.request(SIP.C.BYE, {
+        if (request.method === Constants.ACK) {
+          this.request(Constants.BYE, {
             extraHeaders: extraHeaders,
             body: body
           });
@@ -1093,7 +1094,7 @@ InviteServerContext.prototype = {
       this.request.server_transaction.on('stateChanged', function(){
         if (this.state === SIP.Transactions.C.STATUS_TERMINATED) {
           this.request = new SIP.OutgoingRequest(
-            SIP.C.BYE,
+            Constants.BYE,
             this.dialog.remote_target,
             this.ua,
             {
@@ -1206,7 +1207,7 @@ InviteServerContext.prototype = {
             this.logger.log('no PRACK received, rejecting the call');
             Timers.clearTimeout(this.timers.rel1xxTimer);
             this.request.reply(504);
-            this.terminated(null, SIP.C.causes.NO_PRACK);
+            this.terminated(null, Constants.causes.NO_PRACK);
           }.bind(this), Timers.T1 * 64);
 
           // Send the initial response
@@ -1215,7 +1216,7 @@ InviteServerContext.prototype = {
         }.bind(this),
 
         function onFailure () {
-          this.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          this.failed(null, Constants.causes.WEBRTC_ERROR);
         }.bind(this)
       );
     } // end do100rel
@@ -1226,9 +1227,9 @@ InviteServerContext.prototype = {
     }
 
     if (options.statusCode !== 100 &&
-        (this.rel100 === SIP.C.supported.REQUIRED ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && options.rel100) ||
-         (this.rel100 === SIP.C.supported.SUPPORTED && (this.ua.configuration.rel100 === SIP.C.supported.REQUIRED)))) {
+        (this.rel100 === Constants.supported.REQUIRED ||
+         (this.rel100 === Constants.supported.SUPPORTED && options.rel100) ||
+         (this.rel100 === Constants.supported.SUPPORTED && (this.ua.configuration.rel100 === Constants.supported.REQUIRED)))) {
       do100rel.apply(this);
     } else {
       normalReply.apply(this);
@@ -1265,7 +1266,7 @@ InviteServerContext.prototype = {
 
           // run for reply failure callback
           replyFailed = function() {
-            self.failed(null, SIP.C.causes.CONNECTION_ERROR);
+            self.failed(null, Constants.causes.CONNECTION_ERROR);
           };
 
         // Chrome might call onaddstream before accept() is called, which means
@@ -1299,8 +1300,8 @@ InviteServerContext.prototype = {
         }
         // TODO - fail out on error
         //response = request.reply(480);
-        //self.failed(response, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
-        self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+        //self.failed(response, Constants.causes.USER_DENIED_MEDIA_ACCESS);
+        self.failed(null, Constants.causes.WEBRTC_ERROR);
       };
 
     // Check Session Status
@@ -1389,7 +1390,7 @@ InviteServerContext.prototype = {
     }
 
     switch(request.method) {
-    case SIP.C.CANCEL:
+    case Constants.CANCEL:
       /* RFC3261 15 States that a UAS may have accepted an invitation while a CANCEL
        * was in progress and that the UAC MAY continue with the session established by
        * any 2xx response, or MAY terminate with BYE. SIP does continue with the
@@ -1410,11 +1411,11 @@ InviteServerContext.prototype = {
         this.status = C.STATUS_CANCELED;
         this.request.reply(487);
         this.canceled(request);
-        this.rejected(request, SIP.C.causes.CANCELED);
-        this.failed(request, SIP.C.causes.CANCELED);
+        this.rejected(request, Constants.causes.CANCELED);
+        this.failed(request, Constants.causes.CANCELED);
       }
       break;
-    case SIP.C.ACK:
+    case Constants.ACK:
       if(this.status === C.STATUS_WAITING_FOR_ACK) {
         if (!this.hasAnswer) {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
@@ -1432,21 +1433,21 @@ InviteServerContext.prototype = {
                   statusCode: '488',
                   reasonPhrase: 'Bad Media Description'
                 });
-                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                this.failed(request, Constants.causes.BAD_MEDIA_DESCRIPTION);
               }.bind(this)
             );
           } else if (this.early_sdp) {
             confirmSession.apply(this);
           } else {
             //TODO: Pass to mediahandler
-            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.failed(request, Constants.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
           confirmSession.apply(this);
         }
       }
       break;
-    case SIP.C.PRACK:
+    case Constants.PRACK:
       if (this.status === C.STATUS_WAITING_FOR_PRACK || this.status === C.STATUS_ANSWERED_WAITING_FOR_PRACK) {
         //localMedia = session.mediaHandler.localMedia;
         if(!this.hasAnswer) {
@@ -1473,7 +1474,7 @@ InviteServerContext.prototype = {
                   statusCode: '488',
                   reasonPhrase: 'Bad Media Description'
                 });
-                this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                this.failed(request, Constants.causes.BAD_MEDIA_DESCRIPTION);
               }.bind(this)
             );
           } else {
@@ -1481,7 +1482,7 @@ InviteServerContext.prototype = {
               statusCode: '488',
               reasonPhrase: 'Bad Media Description'
             });
-            this.failed(request, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.failed(request, Constants.causes.BAD_MEDIA_DESCRIPTION);
           }
         } else {
           Timers.clearTimeout(this.timers.rel1xxTimer);
@@ -1558,14 +1559,14 @@ InviteClientContext = function(ua, target, options) {
     extraHeaders.push('Content-Disposition: render;handling=optional');
   }
 
-  if (ua.configuration.rel100 === SIP.C.supported.REQUIRED) {
+  if (ua.configuration.rel100 === Constants.supported.REQUIRED) {
     extraHeaders.push('Require: 100rel');
   }
 
   options.extraHeaders = extraHeaders;
   options.params = requestParams;
 
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.INVITE, target, options]);
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, Constants.INVITE, target, options]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
 
   // Check Session Status
@@ -1580,7 +1581,7 @@ InviteClientContext = function(ua, target, options) {
   this.isCanceled = false;
   this.received_100 = false;
 
-  this.method = SIP.C.INVITE;
+  this.method = Constants.INVITE;
 
   this.receiveNonInviteResponse = this.receiveResponse;
   this.receiveResponse = this.receiveInviteResponse;
@@ -1661,9 +1662,9 @@ InviteClientContext.prototype = {
             return;
           }
           // TODO...fail out
-          //self.failed(null, SIP.C.causes.USER_DENIED_MEDIA_ACCESS);
-          //self.failed(null, SIP.C.causes.WEBRTC_ERROR);
-          self.failed(null, SIP.C.causes.WEBRTC_ERROR);
+          //self.failed(null, Constants.causes.USER_DENIED_MEDIA_ACCESS);
+          //self.failed(null, Constants.causes.WEBRTC_ERROR);
+          self.failed(null, Constants.causes.WEBRTC_ERROR);
         }
       );
     }
@@ -1678,7 +1679,7 @@ InviteClientContext.prototype = {
       extraHeaders = [],
       options = {};
 
-    if (this.status === C.STATUS_TERMINATED || response.method !== SIP.C.INVITE) {
+    if (this.status === C.STATUS_TERMINATED || response.method !== Constants.INVITE) {
       return;
     }
 
@@ -1687,22 +1688,22 @@ InviteClientContext.prototype = {
         if (!this.createDialog(response, 'UAC', true)) {
           return;
         }
-        this.earlyDialogs[id].sendRequest(this, SIP.C.ACK,
+        this.earlyDialogs[id].sendRequest(this, Constants.ACK,
                                           {
                                             body: SIP.Utils.generateFakeSDP(response.body)
                                           });
-        this.earlyDialogs[id].sendRequest(this, SIP.C.BYE);
+        this.earlyDialogs[id].sendRequest(this, Constants.BYE);
 
         /* NOTE: This fails because the forking proxy does not recognize that an unanswerable
          * leg (due to peerConnection limitations) has been answered first. If your forking
          * proxy does not hang up all unanswered branches on the first branch answered, remove this.
          */
         if(this.status !== C.STATUS_CONFIRMED) {
-          this.failed(response, SIP.C.causes.WEBRTC_ERROR);
+          this.failed(response, Constants.causes.WEBRTC_ERROR);
         }
         return;
       } else if (this.status === C.STATUS_CONFIRMED) {
-        this.sendRequest(SIP.C.ACK,{cseq: response.cseq});
+        this.sendRequest(Constants.ACK,{cseq: response.cseq});
         return;
       } else if (!this.hasAnswer) {
         // invite w/o sdp is waiting for callback
@@ -1723,7 +1724,7 @@ InviteClientContext.prototype = {
       extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
       this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
 
-      this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
+      this.earlyDialogs[id].sendRequest(this, Constants.PRACK, {
         extraHeaders: extraHeaders,
         body: SIP.Utils.generateFakeSDP(response.body)
       });
@@ -1784,7 +1785,7 @@ InviteClientContext.prototype = {
           if (!response.body) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
             this.earlyDialogs[id].pracked.push(response.getHeader('rseq'));
-            this.earlyDialogs[id].sendRequest(this, SIP.C.PRACK, {
+            this.earlyDialogs[id].sendRequest(this, Constants.PRACK, {
               extraHeaders: extraHeaders
             });
             this.emit('progress', response);
@@ -1800,7 +1801,7 @@ InviteClientContext.prototype = {
                 extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
                 session.dialog.pracked.push(response.getHeader('rseq'));
 
-                session.sendRequest(SIP.C.PRACK, {
+                session.sendRequest(Constants.PRACK, {
                   extraHeaders: extraHeaders,
                   receiveResponse: function() {}
                 });
@@ -1821,7 +1822,7 @@ InviteClientContext.prototype = {
               function onFailure (e) {
                 session.logger.warn(e);
                 session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-                session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+                session.failed(response, Constants.causes.BAD_MEDIA_DESCRIPTION);
               }
             );
           } else {
@@ -1835,7 +1836,7 @@ InviteClientContext.prototype = {
             .then(function onSuccess(sdp) {
               extraHeaders.push('Content-Type: application/sdp');
               extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
-              earlyDialog.sendRequest(session, SIP.C.PRACK, {
+              earlyDialog.sendRequest(session, Constants.PRACK, {
                 extraHeaders: extraHeaders,
                 body: sdp
               });
@@ -1850,7 +1851,7 @@ InviteClientContext.prototype = {
                 }
                 // TODO - fail out on error
                 // session.failed(gum error);
-                session.failed(null, SIP.C.causes.WEBRTC_ERROR);
+                session.failed(null, Constants.causes.WEBRTC_ERROR);
               } else {
                 earlyDialog.pracked.splice(earlyDialog.pracked.indexOf(response.getHeader('rseq')), 1);
                 // Could not set remote description
@@ -1886,7 +1887,7 @@ InviteClientContext.prototype = {
             options.body = this.renderbody;
           }
           options.cseq = response.cseq;
-          this.sendRequest(SIP.C.ACK, options);
+          this.sendRequest(Constants.ACK, options);
           this.accepted(response);
           break;
         }
@@ -1910,7 +1911,7 @@ InviteClientContext.prototype = {
               break;
             }
             this.status = C.STATUS_CONFIRMED;
-            this.sendRequest(SIP.C.ACK, {cseq:response.cseq});
+            this.sendRequest(Constants.ACK, {cseq:response.cseq});
 
             this.unmute();
             /*
@@ -1925,7 +1926,7 @@ InviteClientContext.prototype = {
           } else {
             if(!response.body) {
               this.acceptAndTerminate(response, 400, 'Missing session description');
-              this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              this.failed(response, Constants.causes.BAD_MEDIA_DESCRIPTION);
               break;
             }
             if (!this.createDialog(response, 'UAC')) {
@@ -1953,7 +1954,7 @@ InviteClientContext.prototype = {
               if (localMedia.getVideoTracks().length > 0) {
                 localMedia.getVideoTracks()[0].enabled = true;
               }*/
-              session.sendRequest(SIP.C.ACK,{
+              session.sendRequest(Constants.ACK,{
                 body: sdp,
                 extraHeaders:['Content-Type: application/sdp'],
                 cseq:response.cseq
@@ -1977,11 +1978,11 @@ InviteClientContext.prototype = {
             options.extraHeaders = extraHeaders;
             options.body = this.renderbody;
           }
-          this.sendRequest(SIP.C.ACK, options);
+          this.sendRequest(Constants.ACK, options);
         } else {
           if(!response.body) {
             this.acceptAndTerminate(response, 400, 'Missing session description');
-            this.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+            this.failed(response, Constants.causes.BAD_MEDIA_DESCRIPTION);
             break;
           }
           if (!this.createDialog(response, 'UAC')) {
@@ -2007,13 +2008,13 @@ InviteClientContext.prototype = {
                 options.body = session.renderbody;
               }
               options.cseq = response.cseq;
-              session.sendRequest(SIP.C.ACK, options);
+              session.sendRequest(Constants.ACK, options);
               session.accepted(response);
             },
             function onFailure (e) {
               session.logger.warn(e);
               session.acceptAndTerminate(response, 488, 'Not Acceptable Here');
-              session.failed(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+              session.failed(response, Constants.causes.BAD_MEDIA_DESCRIPTION);
             }
           );
         }
@@ -2069,11 +2070,11 @@ InviteClientContext.prototype = {
     // ICC RECEIVE REQUEST
 
     // Reject CANCELs
-    if (request.method === SIP.C.CANCEL) {
+    if (request.method === Constants.CANCEL) {
       // TODO; make this a switch when it gets added
     }
 
-    if (request.method === SIP.C.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
+    if (request.method === Constants.ACK && this.status === C.STATUS_WAITING_FOR_ACK) {
       Timers.clearTimeout(this.timers.ackTimer);
       Timers.clearTimeout(this.timers.invite2xxTimer);
       this.status = C.STATUS_CONFIRMED;

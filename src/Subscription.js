@@ -4,6 +4,7 @@
  */
 
 var Timers = require('./Timers');
+var Constants = require('./Constants');
 
 /**
  * @augments SIP
@@ -23,7 +24,7 @@ var Subscription = function (ua, target, event, options) {
   if (!event) {
     throw new TypeError('Event necessary to create a subscription.');
   } else {
-    //TODO: check for valid events here probably make a list in SIP.C; or leave it up to app to check?
+    //TODO: check for valid events here probably make a list in Constants; or leave it up to app to check?
     //The check may need to/should probably occur on the other side,
     this.event = event;
   }
@@ -47,7 +48,7 @@ var Subscription = function (ua, target, event, options) {
   options.extraHeaders.push('Contact: '+ this.contact);
   options.extraHeaders.push('Allow: '+ SIP.Utils.getAllowedMethods(ua));
 
-  SIP.Utils.augment(this, SIP.ClientContext, [ua, SIP.C.SUBSCRIBE, target, options]);
+  SIP.Utils.augment(this, SIP.ClientContext, [ua, Constants.SUBSCRIBE, target, options]);
 
   this.logger = ua.getLogger('sip.subscription');
 
@@ -95,10 +96,10 @@ Subscription.prototype = {
       } else {
         if (!expires) {
           this.logger.warn('Expires header missing in a 200-class response to SUBSCRIBE');
-          this.failed(response, SIP.C.EXPIRES_HEADER_MISSING);
+          this.failed(response, Constants.EXPIRES_HEADER_MISSING);
         } else {
           this.logger.warn('Expires header in a 200-class response to SUBSCRIBE with a higher value than the one in the request');
-          this.failed(response, SIP.C.INVALID_EXPIRES_HEADER);
+          this.failed(response, Constants.INVALID_EXPIRES_HEADER);
         }
       }
     } //Used to just ignore provisional responses; now ignores everything except errorCodes and 2xx
@@ -208,7 +209,7 @@ Subscription.prototype = {
 
     sub_state = request.parseHeader('Subscription-State');
 
-    request.reply(200, SIP.C.REASON_200);
+    request.reply(200, Constants.REASON_200);
 
     Timers.clearTimeout(this.timers.N);
     Timers.clearTimeout(this.timers.sub_duration);

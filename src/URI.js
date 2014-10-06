@@ -2,6 +2,8 @@
  * @fileoverview SIP URI
  */
 
+var Constants = require('./Constants');
+
 /**
  * @augments SIP
  * @class Class creating a SIP URI.
@@ -26,7 +28,7 @@ URI = function(scheme, user, host, port, parameters, headers) {
   }
 
   // Initialize parameters
-  scheme = scheme || SIP.C.SIP;
+  scheme = scheme || Constants.SIP;
   this.parameters = {};
   this.headers = {};
 

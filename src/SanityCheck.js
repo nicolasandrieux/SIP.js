@@ -2,6 +2,8 @@
  * @fileoverview Incoming SIP Message Sanity Check
  */
 
+var Constants = require('./Constants');
+
 /**
  * SIP message sanity check.
  * @augments SIP
@@ -73,7 +75,7 @@ function rfc3261_8_2_2_2() {
     cseq = message.cseq;
 
   if(!message.to_tag) {
-    if(message.method === SIP.C.INVITE) {
+    if(message.method === Constants.INVITE) {
       tr = ua.transactions.ist[message.via_branch];
       if(tr) {
         return;

@@ -221,14 +221,14 @@ describe('Dialogs', function() {
     });
 
     it('returns a request with proper settings, doesn\'t increment local_seqnum', function() {
-      var method = SIP.C.ACK;
+      var method = SIP.Constants.ACK;
 
       expect(Dialog.createRequest(method, null, null)).toEqual({made: 'successful', dialog: Dialog});
       expect(Dialog.invite_seqnum).toBe(Dialog.local_seqnum);
     });
 
     it('returns a request with proper settings, increments local_seqnum', function() {
-      var method = SIP.C.INVITE;
+      var method = SIP.Constants.INVITE;
 
       expect(Dialog.createRequest(method, null, null)).toEqual({made: 'successful', dialog: Dialog});
       expect(Dialog.invite_seqnum).toBe(Dialog.local_seqnum - 1);
@@ -324,7 +324,7 @@ describe('Dialogs', function() {
     });
 
     it('returns true and calls server.transaction.on once if the request method is NOTIFY and the request has a contact header', function() {
-      request.method = SIP.C.NOTIFY;
+      request.method = SIP.Constants.NOTIFY;
 
       expect(Dialog.checkInDialogRequest(request)).toBe(true);
 
@@ -335,7 +335,7 @@ describe('Dialogs', function() {
 
   describe('.sendRequest', function() {
     xit('calls requestsender.send', function() {
-      //Dialog.sendRequest(owner, SIP.C.INVITE);
+      //Dialog.sendRequest(owner, SIP.Constants.INVITE);
       //no good way to test;
     });
   });

@@ -22,7 +22,7 @@ describe("URI", function() {
   });
 
   it("sets the scheme", function() {
-    expect(URI.scheme).toBe(scheme||SIP.C.SIP);
+    expect(URI.scheme).toBe(scheme||SIP.Constants.SIP);
   });
 
   it("sets the user", function() {

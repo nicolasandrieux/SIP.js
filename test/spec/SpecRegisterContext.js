@@ -131,7 +131,7 @@ describe('RegisterContext', function() {
       RegisterContext.registered = true;
       expect(RegisterContext.unregistered).not.toHaveBeenCalled();
       RegisterContext.onTransportClosed();
-      expect(RegisterContext.unregistered).toHaveBeenCalledWith(null, SIP.C.causes.CONNECTION_ERROR);
+      expect(RegisterContext.unregistered).toHaveBeenCalledWith(null, SIP.Constants.causes.CONNECTION_ERROR);
     });
   });
   

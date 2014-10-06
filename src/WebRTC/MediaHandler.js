@@ -127,9 +127,9 @@ var MediaHandler = function(session, options) {
     //normal calls switch from failed to connected in some cases, so checking for failed and terminated
     /*if (this.iceConnectionState === 'failed') {
       self.session.terminate({
-        cause: SIP.C.causes.RTP_TIMEOUT,
+        cause: Constants.causes.RTP_TIMEOUT,
         status_code: 200,
-        reason_phrase: SIP.C.causes.RTP_TIMEOUT
+        reason_phrase: Constants.causes.RTP_TIMEOUT
       });
     } else if (e.currentTarget.iceGatheringState === 'complete' && this.iceConnectionState !== 'closed') {
       self.onIceCompleted(this);

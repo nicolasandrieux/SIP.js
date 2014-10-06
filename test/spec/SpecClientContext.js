@@ -17,7 +17,7 @@ describe('ClientContext', function() {
 
     ua = new SIP.UA({uri: 'alice@example.com', wsServers: 'ws:server.example.com'});
     ua.transport = jasmine.createSpyObj('transport', ['disconnect']);
-    method = SIP.C.INVITE;
+    method = SIP.Constants.INVITE;
     target = 'alice@example.com';
     body = '{"foo":"bar"}';
     contentType = 'application/json';
@@ -133,7 +133,7 @@ describe('ClientContext', function() {
         response.status_code = i;
         ClientContext.receiveResponse(response);
 
-        expect(ClientContext.emit).toHaveBeenCalledWith('progress', response, SIP.C.REASON_PHRASE[response.status_code]|| '');
+        expect(ClientContext.emit).toHaveBeenCalledWith('progress', response, SIP.Constants.REASON_PHRASE[response.status_code]|| '');
         ClientContext.emit.calls.reset();
       }
     });
@@ -145,7 +145,7 @@ describe('ClientContext', function() {
         response.status_code = i;
         ClientContext.receiveResponse(response);
 
-        expect(ClientContext.emit).toHaveBeenCalledWith('accepted', response, SIP.C.REASON_PHRASE[response.status_code]|| '');
+        expect(ClientContext.emit).toHaveBeenCalledWith('accepted', response, SIP.Constants.REASON_PHRASE[response.status_code]|| '');
         ClientContext.emit.calls.reset();
       }
     });
@@ -157,8 +157,8 @@ describe('ClientContext', function() {
         response.status_code = i;
         ClientContext.receiveResponse(response);
 
-        expect(ClientContext.emit).toHaveBeenCalledWith('rejected', response, SIP.C.REASON_PHRASE[response.status_code]|| '');
-        expect(ClientContext.emit).toHaveBeenCalledWith('failed', response, SIP.C.REASON_PHRASE[response.status_code]|| '');
+        expect(ClientContext.emit).toHaveBeenCalledWith('rejected', response, SIP.Constants.REASON_PHRASE[response.status_code]|| '');
+        expect(ClientContext.emit).toHaveBeenCalledWith('failed', response, SIP.Constants.REASON_PHRASE[response.status_code]|| '');
         ClientContext.emit.calls.reset();
       }
     });
@@ -168,7 +168,7 @@ describe('ClientContext', function() {
     it('emits failed with a status code 0, null response, and request timeout cause', function() {
       spyOn(ClientContext, 'emit');
       ClientContext.onRequestTimeout();
-      expect(ClientContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+      expect(ClientContext.emit).toHaveBeenCalledWith('failed', null, SIP.Constants.causes.REQUEST_TIMEOUT);
     });
   });
 
@@ -176,7 +176,7 @@ describe('ClientContext', function() {
     it('emits failed with a status code 0, null response, and connection error cause', function() {
       spyOn(ClientContext, 'emit');
       ClientContext.onTransportError();
-      expect(ClientContext.emit).toHaveBeenCalledWith('failed',null,SIP.C.causes.CONNECTION_ERROR);
+      expect(ClientContext.emit).toHaveBeenCalledWith('failed', null, SIP.Constants.causes.CONNECTION_ERROR);
     });
   });
 

@@ -2,6 +2,8 @@
  * @fileoverview SIP Message
  */
 
+var Constants = require('./Constants');
+
 module.exports = function (SIP) {
 var
   OutgoingRequest,
@@ -199,14 +201,14 @@ OutgoingRequest.prototype = {
     }
 
     //Supported
-    if (this.method === SIP.C.REGISTER) {
+    if (this.method === Constants.REGISTER) {
       supported.push('path', 'gruu');
-    } else if (this.method === SIP.C.INVITE &&
+    } else if (this.method === Constants.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
       supported.push('gruu');
     }
 
-    if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+    if (this.ua.configuration.rel100 === Constants.supported.SUPPORTED) {
       supported.push('100rel');
     }
 
@@ -415,7 +417,7 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   response = SIP.Utils.buildStatusLine(code, reason);
   extraHeaders = (extraHeaders || []).slice();
 
-  if(this.method === SIP.C.INVITE && code > 100 && code <= 200) {
+  if(this.method === Constants.INVITE && code > 100 && code <= 200) {
     rr = this.getHeaders('record-route');
     length = rr.length;
 
@@ -448,12 +450,12 @@ IncomingRequest.prototype.reply = function(code, reason, extraHeaders, body, onS
   }
 
   //Supported
-  if (this.method === SIP.C.INVITE &&
+  if (this.method === Constants.INVITE &&
                (this.ua.contact.pub_gruu || this.ua.contact.temp_gruu)) {
     supported.push('gruu');
   }
 
-  if (this.ua.configuration.rel100 === SIP.C.supported.SUPPORTED) {
+  if (this.ua.configuration.rel100 === Constants.supported.SUPPORTED) {
     supported.push('100rel');
   }
 

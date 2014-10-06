@@ -4,6 +4,7 @@
  */
 
 var Timers = require('../Timers');
+var Constants = require('../Constants');
 
 /**
  * @augments SIP.Dialog
@@ -38,7 +39,7 @@ RequestSender.prototype = {
       request_sender.send();
 
     // RFC3261 14.2 Modifying an Existing Session -UAC BEHAVIOR-
-    if (this.request.method === SIP.C.INVITE && request_sender.clientTransaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
+    if (this.request.method === Constants.INVITE && request_sender.clientTransaction.state !== SIP.Transactions.C.STATUS_TERMINATED) {
       this.dialog.uac_pending_reply = true;
       request_sender.clientTransaction.on('stateChanged', function stateChanged(){
         if (this.state === SIP.Transactions.C.STATUS_ACCEPTED ||
@@ -70,7 +71,7 @@ RequestSender.prototype = {
     // RFC3261 12.2.1.2 408 or 481 is received for a request within a dialog.
     if (response.status_code === 408 || response.status_code === 481) {
       this.applicant.onDialogError(response);
-    } else if (response.method === SIP.C.INVITE && response.status_code === 491) {
+    } else if (response.method === Constants.INVITE && response.status_code === 491) {
       if (this.reattempt) {
         this.applicant.receiveResponse(response);
       } else {

@@ -21,7 +21,7 @@ Object.defineProperties(SIP, {
 SIP.Utils = require('./Utils')(SIP);
 SIP.LoggerFactory = require('./LoggerFactory');
 SIP.EventEmitter = require('./EventEmitter');
-SIP.C = require('./Constants');
+SIP.Constants = require('./Constants');
 SIP.Exceptions = require('./Exceptions');
 SIP.Timers = require('./Timers');
 SIP.Transport = require('./Transport')(SIP, global.WebSocket);

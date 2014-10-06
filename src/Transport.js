@@ -3,6 +3,7 @@
  */
 
 var Timers = require('./Timers');
+var Constants = require('./Constants');
 
 /**
  * @augments SIP
@@ -242,13 +243,13 @@ Transport.prototype = {
         * in order to be discarded there.
         */
         switch(message.method) {
-          case SIP.C.INVITE:
+          case Constants.INVITE:
             transaction = this.ua.transactions.ict[message.via_branch];
             if(transaction) {
               transaction.receiveResponse(message);
             }
             break;
-          case SIP.C.ACK:
+          case Constants.ACK:
             // Just in case ;-)
             break;
           default:

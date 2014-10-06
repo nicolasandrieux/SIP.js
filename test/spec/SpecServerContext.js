@@ -44,7 +44,7 @@ describe('ServerContext', function() {
   });
 
   it('sets the method', function() {
-    expect(ServerContext.method).toBe(SIP.C.REFER);
+    expect(ServerContext.method).toBe(SIP.Constants.REFER);
   });
 
   it('sets the request', function() {
@@ -62,7 +62,7 @@ describe('ServerContext', function() {
   it('sets the transaction based on the request method', function() {
     expect(SIP.Transactions.NonInviteServerTransaction).toHaveBeenCalledWith(request,ua);
     expect(ServerContext.transaction).toBeDefined();
-    request.method = SIP.C.INVITE;
+    request.method = SIP.Constants.INVITE;
     ServerContext = new SIP.ServerContext(ua,request);
     expect(SIP.Transactions.InviteServerTransaction).toHaveBeenCalledWith(request,ua);
     expect(ServerContext.transaction).toBeDefined();
@@ -248,7 +248,7 @@ describe('ServerContext', function() {
 
       ServerContext.onRequestTimeout();
 
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.Constants.causes.REQUEST_TIMEOUT);
     });
   });
 
@@ -258,7 +258,7 @@ describe('ServerContext', function() {
 
       ServerContext.onTransportError();
 
-      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.C.causes.CONNECTION_ERROR);
+      expect(ServerContext.emit).toHaveBeenCalledWith('failed', null, SIP.Constants.causes.CONNECTION_ERROR);
     });
   });
 });

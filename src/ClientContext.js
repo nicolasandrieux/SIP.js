@@ -1,4 +1,5 @@
 var EventEmitter = require('./EventEmitter');
+var Constants = require('./Constants');
 
 module.exports = function (SIP) {
 var ClientContext;
@@ -95,11 +96,11 @@ ClientContext.prototype.receiveResponse = function (response) {
 };
 
 ClientContext.prototype.onRequestTimeout = function () {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+  this.emit('failed', null, Constants.causes.REQUEST_TIMEOUT);
 };
 
 ClientContext.prototype.onTransportError = function () {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
+  this.emit('failed', null, Constants.causes.CONNECTION_ERROR);
 };
 
 return ClientContext;

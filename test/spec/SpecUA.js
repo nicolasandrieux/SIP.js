@@ -386,7 +386,7 @@ describe('UA', function() {
       options = {contentType : 'mixedContent' };
 
       UA.message(target, body, options);
-      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.C.MESSAGE, target, {contentType: 'mixedContent', body: body});
+      expect(SIP.ClientContext).toHaveBeenCalledWith(UA, SIP.Constants.MESSAGE, target, {contentType: 'mixedContent', body: body});
     });
 
     it('calls ClientContext.send method with no options provided to it', function() {
@@ -658,7 +658,7 @@ describe('UA', function() {
 
     it('checks that the ruri points to us', function() {
       var reply_sl = jasmine.createSpy('reply_sl');
-      var request = { method : SIP.C.ACK ,
+      var request = { method : SIP.Constants.ACK ,
                   ruri : { user : 'user' } ,
                   reply_sl : reply_sl };
       expect(UA.receiveRequest(request)).toBeUndefined();
@@ -677,14 +677,14 @@ describe('UA', function() {
     });
 
     it('checks the transaction and returns if invalid', function() {
-      var request = { method : SIP.C.ACK ,
+      var request = { method : SIP.Constants.ACK ,
                       ruri : { user : UA.configuration.uri.user} };
       expect(UA.receiveRequest(request)).toBeUndefined();
       expect(SIP.Transactions.checkTransaction).toHaveBeenCalledWith(UA, request);
     });
 
     it('creates a new NIST if the SIP method is options', function() {
-      var request = { method : SIP.C.OPTIONS ,
+      var request = { method : SIP.Constants.OPTIONS ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
       UA.receiveRequest(request);
@@ -693,7 +693,7 @@ describe('UA', function() {
     });
 
     it('checks if there is a listener when the SIP method is message and rejects if no listener is found', function() {
-      var request = { method : SIP.C.MESSAGE ,
+      var request = { method : SIP.Constants.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy };
       UA.checkListener = jasmine.createSpy('checkListener').and.callFake(function() {
@@ -709,7 +709,7 @@ describe('UA', function() {
       var callback = jasmine.createSpy('callback').and.callFake(function() {
         return true;
       });
-      var request = { method : SIP.C.MESSAGE ,
+      var request = { method : SIP.Constants.MESSAGE ,
                       ruri : { user : UA.configuration.uri.user } ,
                       reply : replySpy,
                       getHeader: jasmine.createSpy('getHeader')};
@@ -734,7 +734,7 @@ describe('UA', function() {
     });
 
     it('sends a 488 if an invite is received but there is no WebRTC support', function() {
-      var request = { method : SIP.C.INVITE ,
+      var request = { method : SIP.Constants.INVITE ,
                       ruri : { user: UA.configuration.uri.user } ,
                       reply : replySpy };
       var webrtc = SIP.WebRTC.isSupported;
@@ -747,7 +747,7 @@ describe('UA', function() {
     });
 
     it('sends a 481 if a BYE is received', function() {
-      var request = { method : SIP.C.BYE ,
+      var request = { method : SIP.Constants.BYE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy };
       UA.receiveRequest(request);
@@ -757,7 +757,7 @@ describe('UA', function() {
     it('finds the session and call receiveRequest on the session if it exists if a CANCEL is received', function() {
       var receiveRequestSpy = jasmine.createSpy('receiveRequest');
       spyOn(UA, 'findSession').and.returnValue({receiveRequest : receiveRequestSpy });
-      var request = { method : SIP.C.CANCEL ,
+      var request = { method : SIP.Constants.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy };
       UA.receiveRequest(request);
@@ -767,7 +767,7 @@ describe('UA', function() {
 
     it('logs a warning if the session does not exist if a CANCEL is a received', function() {
       spyOn(UA, 'findSession').and.returnValue(false);
-      var request = { method : SIP.C.CANCEL ,
+      var request = { method : SIP.Constants.CANCEL ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy };
       UA.receiveRequest(request);
@@ -776,7 +776,7 @@ describe('UA', function() {
     });
 
     it('should not do nothing if an ACK is received', function() {
-      var request = { method : SIP.C.ACK ,
+      var request = { method : SIP.Constants.ACK ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy };
       UA.receiveRequest(request);
@@ -798,7 +798,7 @@ describe('UA', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return {receiveRequest : receiveRequest };
       });
-      var request = { method : SIP.C.INVITE ,
+      var request = { method : SIP.Constants.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -829,7 +829,7 @@ describe('UA', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
-      var request = { method : SIP.C.INVITE ,
+      var request = { method : SIP.Constants.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -845,7 +845,7 @@ describe('UA', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return {receiveRequest : receiveRequest };
       });
-      var request = { method : SIP.C.NOTIFY ,
+      var request = { method : SIP.Constants.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -864,7 +864,7 @@ describe('UA', function() {
       UA.findSession = jasmine.createSpy('findSession').and.callFake(function() {
         return {receiveRequest : receiveRequest};
       });
-      var request = { method : SIP.C.NOTIFY ,
+      var request = { method : SIP.Constants.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -881,7 +881,7 @@ describe('UA', function() {
       UA.findSession = jasmine.createSpy('findSession').and.callFake(function() {
         return false;
       });
-      var request = { method : SIP.C.NOTIFY ,
+      var request = { method : SIP.Constants.NOTIFY ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -895,7 +895,7 @@ describe('UA', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
-      var request = { method : SIP.C.INVITE ,
+      var request = { method : SIP.Constants.INVITE ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -908,7 +908,7 @@ describe('UA', function() {
       UA.findDialog = jasmine.createSpy('findDialog').and.callFake(function() {
         return false;
       });
-      var request = { method : SIP.C.ACK ,
+      var request = { method : SIP.Constants.ACK ,
                     ruri : { user : UA.configuration.uri.user } ,
                     reply : replySpy ,
                     to_tag : 'tag' };
@@ -1095,7 +1095,7 @@ describe('UA', function() {
       expect(UA.configuration.connectionRecoveryMinInterval).toBe(2);
       expect(UA.configuration.connectionRecoveryMaxInterval).toBe(30);
 
-      expect(UA.configuration.userAgentString).toBe(SIP.C.USER_AGENT);
+      expect(UA.configuration.userAgentString).toBe(SIP.Constants.USER_AGENT);
 
       expect(UA.configuration.usePreloadedRoute).toBe(false);
 
@@ -1111,7 +1111,7 @@ describe('UA', function() {
 
       expect(UA.configuration.autostart).toBe(true);
 
-      expect(UA.configuration.rel100).toBe(SIP.C.supported.UNSUPPORTED);
+      expect(UA.configuration.rel100).toBe(SIP.Constants.supported.UNSUPPORTED);
     });
 
     it('throws a configuration error when a mandatory parameter is missing', function() {
@@ -1432,31 +1432,31 @@ describe('UA', function() {
     });
 
     describe('.rel100', function() {
-      it('returns SIP.C.supported.REQUIRED if SIP.C.supported.REQUIRED is passed in', function(){
-        expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.REQUIRED)).toBe(SIP.C.supported.REQUIRED);
+      it('returns SIP.Constants.supported.REQUIRED if SIP.Constants.supported.REQUIRED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100(SIP.Constants.supported.REQUIRED)).toBe(SIP.Constants.supported.REQUIRED);
       });
 
       // Legacy Support
-      it('returns SIP.C.supported.REQUIRED if "required" is passed in', function(){
-        expect(SIP.UA.configuration_check.optional.rel100("required")).toBe(SIP.C.supported.REQUIRED);
+      it('returns SIP.Constants.supported.REQUIRED if "required" is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100("required")).toBe(SIP.Constants.supported.REQUIRED);
       });
 
-      it('returns SIP.C.supported.SUPPORTED if SIP.C.supported.SUPPORTED is passed in', function(){
-        expect(SIP.UA.configuration_check.optional.rel100(SIP.C.supported.SUPPORTED)).toBe(SIP.C.supported.SUPPORTED);
+      it('returns SIP.Constants.supported.SUPPORTED if SIP.Constants.supported.SUPPORTED is passed in', function(){
+        expect(SIP.UA.configuration_check.optional.rel100(SIP.Constants.supported.SUPPORTED)).toBe(SIP.Constants.supported.SUPPORTED);
       });
 
       // Legacy Support
-      it('returns SIP.C.supported.SUPPORTED if "supported" is passed in as well as adding it to the supported list', function(){
-        expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe(SIP.C.supported.SUPPORTED);
+      it('returns SIP.Constants.supported.SUPPORTED if "supported" is passed in as well as adding it to the supported list', function(){
+        expect(SIP.UA.configuration_check.optional.rel100('supported')).toBe(SIP.Constants.supported.SUPPORTED);
       });
 
-      it('returns SIP.C.supported.NONE for all other arguments passed in', function() {
-        expect(SIP.UA.configuration_check.optional.rel100()).toBe(SIP.C.supported.UNSUPPORTED);
-        expect(SIP.UA.configuration_check.optional.rel100(true)).toBe(SIP.C.supported.UNSUPPORTED);
-        expect(SIP.UA.configuration_check.optional.rel100('a string')).toBe(SIP.C.supported.UNSUPPORTED);
-        expect(SIP.UA.configuration_check.optional.rel100(7)).toBe(SIP.C.supported.UNSUPPORTED);
-        expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe(SIP.C.supported.UNSUPPORTED);
-        expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe(SIP.C.supported.UNSUPPORTED);
+      it('returns SIP.Constants.supported.NONE for all other arguments passed in', function() {
+        expect(SIP.UA.configuration_check.optional.rel100()).toBe(SIP.Constants.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(true)).toBe(SIP.Constants.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100('a string')).toBe(SIP.Constants.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(7)).toBe(SIP.Constants.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100({even: 'objects'})).toBe(SIP.Constants.supported.UNSUPPORTED);
+        expect(SIP.UA.configuration_check.optional.rel100(['arrays'])).toBe(SIP.Constants.supported.UNSUPPORTED);
       });
     });
 
@@ -1582,7 +1582,7 @@ describe('UA', function() {
 
       it('passes for string parameters', function() {
         expect(SIP.UA.configuration_check.optional.userAgentString('string')).toBe('string');
-        expect(SIP.UA.configuration_check.optional.userAgentString(SIP.C.USER_AGENT + ' string')).toBe(SIP.C.USER_AGENT + ' string');
+        expect(SIP.UA.configuration_check.optional.userAgentString(SIP.Constants.USER_AGENT + ' string')).toBe(SIP.Constants.USER_AGENT + ' string');
       });
     });
 

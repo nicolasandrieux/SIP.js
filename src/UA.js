@@ -2,6 +2,7 @@ var EventEmitter = require('./EventEmitter');
 var Timers = require('./Timers');
 var Exceptions = require('./Exceptions');
 var LoggerFactory = require('./LoggerFactory');
+var Constants = require('./Constants');
 
 /**
  * @augments SIP
@@ -292,7 +293,7 @@ UA.prototype.message = function(target, body, options) {
   options.contentType = options.contentType || 'text/plain';
   options.body = body;
 
-  return this.request(SIP.C.MESSAGE, target, options);
+  return this.request(Constants.MESSAGE, target, options);
 };
 
 UA.prototype.request = function (method, target, options) {
@@ -601,14 +602,14 @@ UA.prototype.receiveRequest = function(request) {
        ruriMatches(this.contact.pub_gruu) ||
        ruriMatches(this.contact.temp_gruu))) {
     this.logger.warn('Request-URI does not point to us');
-    if (request.method !== SIP.C.ACK) {
+    if (request.method !== Constants.ACK) {
       request.reply_sl(404);
     }
     return;
   }
 
   // Check request URI scheme
-  if(request.ruri.scheme === SIP.C.SIPS) {
+  if(request.ruri.scheme === Constants.SIPS) {
     request.reply_sl(416);
     return;
   }
@@ -623,13 +624,13 @@ UA.prototype.receiveRequest = function(request) {
    * received within a dialog (for example, an OPTIONS request).
    * They are processed as if they had been received outside the dialog.
    */
-  if(method === SIP.C.OPTIONS) {
+  if(method === Constants.OPTIONS) {
     new SIP.Transactions.NonInviteServerTransaction(request, this);
     request.reply(200, null, [
       'Allow: '+ SIP.Utils.getAllowedMethods(this),
       'Accept: '+ C.ACCEPTED_BODY_TYPES
     ]);
-  } else if (method === SIP.C.MESSAGE) {
+  } else if (method === Constants.MESSAGE) {
     if (!this.checkListener(methodLower)) {
       // UA is not listening for this.  Reject immediately.
       new SIP.Transactions.NonInviteServerTransaction(request, this);
@@ -642,8 +643,8 @@ UA.prototype.receiveRequest = function(request) {
 
     request.reply(200, null);
     this.emit('message', message);
-  } else if (method !== SIP.C.INVITE &&
-             method !== SIP.C.ACK) {
+  } else if (method !== Constants.INVITE &&
+             method !== Constants.ACK) {
     // Let those methods pass through to normal processing for now.
     transaction = new SIP.ServerContext(this, request);
   }
@@ -651,7 +652,7 @@ UA.prototype.receiveRequest = function(request) {
   // Initial Request
   if(!request.to_tag) {
     switch(method) {
-      case SIP.C.INVITE:
+      case Constants.INVITE:
         var isMediaSupported = this.configuration.mediaHandlerFactory.isSupported;
         if(!isMediaSupported || isMediaSupported()) {
           session = new SIP.InviteServerContext(this, request)
@@ -663,11 +664,11 @@ UA.prototype.receiveRequest = function(request) {
           request.reply(488);
         }
         break;
-      case SIP.C.BYE:
+      case Constants.BYE:
         // Out of dialog BYE received
         request.reply(481);
         break;
-      case SIP.C.CANCEL:
+      case Constants.CANCEL:
         session = this.findSession(request);
         if(session) {
           session.receiveRequest(request);
@@ -675,7 +676,7 @@ UA.prototype.receiveRequest = function(request) {
           this.logger.warn('received CANCEL request for a non existent session');
         }
         break;
-      case SIP.C.ACK:
+      case Constants.ACK:
         /* Absorb it.
          * ACK request without a corresponding Invite Transaction
          * and without To tag.
@@ -691,11 +692,11 @@ UA.prototype.receiveRequest = function(request) {
     dialog = this.findDialog(request);
 
     if(dialog) {
-      if (method === SIP.C.INVITE) {
+      if (method === Constants.INVITE) {
         new SIP.Transactions.InviteServerTransaction(request, this);
       }
       dialog.receiveRequest(request);
-    } else if (method === SIP.C.NOTIFY) {
+    } else if (method === Constants.NOTIFY) {
       session = this.findSession(request);
       if(session) {
         session.receiveRequest(request);
@@ -710,7 +711,7 @@ UA.prototype.receiveRequest = function(request) {
      * been created.
      */
     else {
-      if(method !== SIP.C.ACK) {
+      if(method !== Constants.ACK) {
         request.reply(481);
       }
     }
@@ -862,7 +863,7 @@ UA.prototype.loadConfig = function(configuration) {
       usePreloadedRoute: false,
 
       //string to be inserted into User-Agent request header
-      userAgentString: SIP.C.USER_AGENT,
+      userAgentString: Constants.USER_AGENT,
 
       // Session parameters
       noAnswerTimeout: 60,
@@ -880,7 +881,7 @@ UA.prototype.loadConfig = function(configuration) {
       autostart: true,
 
       //Reliable Provisional Responses
-      rel100: SIP.C.supported.UNSUPPORTED,
+      rel100: Constants.supported.UNSUPPORTED,
 
       mediaHandlerFactory: SIP.WebRTC.MediaHandler.defaultFactory,
 
@@ -926,7 +927,7 @@ UA.prototype.loadConfig = function(configuration) {
     }
   }
 
-  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, SIP.C.supported.UNSUPPORTED);
+  SIP.Utils.optionsOverride(configuration, 'rel100', 'reliable', true, this.logger, Constants.supported.UNSUPPORTED);
 
   // Check Optional parameters
   for(parameter in UA.configuration_check.optional) {
@@ -1088,7 +1089,7 @@ UA.configuration_skeleton = (function() {
       "registrarServer",
       "reliable",
       "rel100",
-      "userAgentString", //SIP.C.USER_AGENT
+      "userAgentString", //Constants.USER_AGENT
       "autostart",
       "stunServers",
       "traceSip",
@@ -1139,7 +1140,7 @@ UA.configuration_check = {
       var parsed;
 
       if (!(/^sip:/i).test(uri)) {
-        uri = SIP.C.SIP + ':' + uri;
+        uri = Constants.SIP + ':' + uri;
       }
       parsed = SIP.URI.parse(uri);
 
@@ -1287,12 +1288,12 @@ UA.configuration_check = {
     },
 
     rel100: function(rel100) {
-      if(rel100 === SIP.C.supported.REQUIRED) {
-        return SIP.C.supported.REQUIRED;
-      } else if (rel100 === SIP.C.supported.SUPPORTED) {
-        return SIP.C.supported.SUPPORTED;
+      if(rel100 === Constants.supported.REQUIRED) {
+        return Constants.supported.REQUIRED;
+      } else if (rel100 === Constants.supported.SUPPORTED) {
+        return Constants.supported.SUPPORTED;
       } else  {
-        return SIP.C.supported.UNSUPPORTED;
+        return Constants.supported.UNSUPPORTED;
       }
     },
 
@@ -1320,7 +1321,7 @@ UA.configuration_check = {
       }
 
       if (!/^sip:/i.test(registrarServer)) {
-        registrarServer = SIP.C.SIP + ':' + registrarServer;
+        registrarServer = Constants.SIP + ':' + registrarServer;
       }
       parsed = SIP.URI.parse(registrarServer);
 

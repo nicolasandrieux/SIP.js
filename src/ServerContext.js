@@ -1,4 +1,5 @@
 var EventEmitter = require('./EventEmitter');
+var Constants = require('./Constants');
 
 module.exports = function (SIP) {
 var ServerContext;
@@ -13,7 +14,7 @@ ServerContext = function (ua, request) {
   this.ua = ua;
   this.logger = ua.getLogger('sip.servercontext');
   this.request = request;
-  if (request.method === SIP.C.INVITE) {
+  if (request.method === Constants.INVITE) {
     this.transaction = new SIP.Transactions.InviteServerTransaction(request, ua);
   } else {
     this.transaction = new SIP.Transactions.NonInviteServerTransaction(request, ua);
@@ -74,11 +75,11 @@ ServerContext.prototype.reply = function (options) {
 };
 
 ServerContext.prototype.onRequestTimeout = function () {
-  this.emit('failed', null, SIP.C.causes.REQUEST_TIMEOUT);
+  this.emit('failed', null, Constants.causes.REQUEST_TIMEOUT);
 };
 
 ServerContext.prototype.onTransportError = function () {
-  this.emit('failed', null, SIP.C.causes.CONNECTION_ERROR);
+  this.emit('failed', null, Constants.causes.CONNECTION_ERROR);
 };
 
 return ServerContext;

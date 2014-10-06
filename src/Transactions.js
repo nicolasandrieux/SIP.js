@@ -4,6 +4,7 @@
 
 var EventEmitter = require('./EventEmitter');
 var Timers = require('./Timers');
+var Constants = require('./Constants');
 
 /**
  * SIP Transactions module.
@@ -248,7 +249,7 @@ InviteClientTransaction.prototype.sendACK = function(response) {
 InviteClientTransaction.prototype.cancel_request = function(tr, reason) {
   var request = tr.request;
 
-  this.cancel = SIP.C.CANCEL + ' ' + request.ruri + ' SIP/2.0\r\n';
+  this.cancel = Constants.CANCEL + ' ' + request.ruri + ' SIP/2.0\r\n';
   this.cancel += 'Via: ' + request.headers['Via'].toString() + '\r\n';
 
   if(this.request.headers['Route']) {
@@ -636,7 +637,7 @@ var checkTransaction = function(ua, request) {
   var tr;
 
   switch(request.method) {
-    case SIP.C.INVITE:
+    case Constants.INVITE:
       tr = ua.transactions.ist[request.via_branch];
       if(tr) {
         switch(tr.state) {
@@ -652,7 +653,7 @@ var checkTransaction = function(ua, request) {
         return true;
       }
       break;
-    case SIP.C.ACK:
+    case Constants.ACK:
       tr = ua.transactions.ist[request.via_branch];
 
       // RFC 6026 7.1
@@ -671,7 +672,7 @@ var checkTransaction = function(ua, request) {
         return false;
       }
       break;
-    case SIP.C.CANCEL:
+    case Constants.CANCEL:
       tr = ua.transactions.ist[request.via_branch];
       if(tr) {
         request.reply_sl(200);

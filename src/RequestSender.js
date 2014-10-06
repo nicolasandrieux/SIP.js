@@ -3,6 +3,8 @@
  * @fileoverview Request Sender
  */
 
+var Constants = require('./Constants');
+
 /**
  * @augments SIP
  * @class Class creating a request sender.
@@ -23,7 +25,7 @@ RequestSender = function(applicant, ua) {
   this.staled = false;
 
   // If ua is in closing process or even closed just allow sending Bye and ACK
-  if (ua.status === SIP.UA.C.STATUS_USER_CLOSED && (this.method !== SIP.C.BYE || this.method !== SIP.C.ACK)) {
+  if (ua.status === SIP.UA.C.STATUS_USER_CLOSED && (this.method !== Constants.BYE || this.method !== Constants.ACK)) {
     this.onTransportError();
   }
 };
@@ -113,7 +115,7 @@ RequestSender.prototype = {
           this.staled = true;
         }
 
-        if (response.method === SIP.C.REGISTER) {
+        if (response.method === Constants.REGISTER) {
           cseq = this.applicant.cseq += 1;
         } else if (this.request.dialog){
           cseq = this.request.dialog.local_seqnum += 1;

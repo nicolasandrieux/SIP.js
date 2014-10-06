@@ -1054,7 +1054,7 @@ describe('InviteServerContext', function() {
     var ISC = new SIP.InviteServerContext(ua, request);
     SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
 
-    expect(ISC.rel100).toBe(SIP.C.supported.REQUIRED);
+    expect(ISC.rel100).toBe(SIP.Constants.supported.REQUIRED);
   });
 
   it('sets 100rel, supported', function() {
@@ -1080,7 +1080,7 @@ describe('InviteServerContext', function() {
     var ISC = new SIP.InviteServerContext(ua, request);
     SIP.Timers.clearTimeout(ISC.timers.userNoAnswerTimer);
 
-    expect(ISC.rel100).toBe(SIP.C.supported.SUPPORTED);
+    expect(ISC.rel100).toBe(SIP.Constants.supported.SUPPORTED);
   });
 
   it('replies 500 and returns if the createDialog call fails', function() {
@@ -1395,7 +1395,7 @@ describe('InviteServerContext', function() {
         expect(InviteServerContext.status).toBe(9);
         expect(InviteServerContext.request.reply).toHaveBeenCalledWith(487);
         expect(InviteServerContext.canceled).toHaveBeenCalled();
-        expect(InviteServerContext.failed.calls.mostRecent().args[1]).toBe(SIP.C.causes.CANCELED);
+        expect(InviteServerContext.failed.calls.mostRecent().args[1]).toBe(SIP.Constants.causes.CANCELED);
       });
     });
 
@@ -1475,7 +1475,7 @@ describe('InviteServerContext', function() {
 
         InviteServerContext.receiveRequest(req);
 
-        expect(InviteServerContext.failed).toHaveBeenCalledWith(req, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+        expect(InviteServerContext.failed).toHaveBeenCalledWith(req, SIP.Constants.causes.BAD_MEDIA_DESCRIPTION);
       });
 
       it('calls confirmSession if there was an invite w/ sdp originally', function() {
@@ -1553,7 +1553,7 @@ describe('InviteServerContext', function() {
         InviteServerContext.receiveRequest(req);
 
         expect(InviteServerContext.terminate).toHaveBeenCalled();
-        expect(InviteServerContext.failed).toHaveBeenCalledWith(req, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+        expect(InviteServerContext.failed).toHaveBeenCalledWith(req, SIP.Constants.causes.BAD_MEDIA_DESCRIPTION);
       });
 
       it('calls reply(200) and other smaller things when the invite had a body (accept not called)', function() {
@@ -1626,7 +1626,7 @@ describe('InviteServerContext', function() {
 
         expect(req.reply).toHaveBeenCalledWith(200);
         expect(InviteServerContext.emit.calls.first().args[0]).toBe('bye');
-        expect(InviteServerContext.terminated).toHaveBeenCalledWith(req, SIP.C.causes.BYE);
+        expect(InviteServerContext.terminated).toHaveBeenCalledWith(req, SIP.Constants.causes.BYE);
       });
     });
 
@@ -1822,7 +1822,7 @@ describe('InviteClientContext', function() {
     expect(InviteClientContext.isCanceled).toBe(false);
     expect(InviteClientContext.received_100).toBe(false);
 
-    expect(InviteClientContext.method).toBe(SIP.C.INVITE);
+    expect(InviteClientContext.method).toBe(SIP.Constants.INVITE);
     expect(InviteClientContext.receiveResponse).toBe(InviteClientContext.receiveInviteResponse);
 
     expect(InviteClientContext.logger).toBe(ua.getLogger('sip.inviteclientcontext'));
@@ -1944,8 +1944,8 @@ describe('InviteClientContext', function() {
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag]).toBeDefined();
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.C.ACK);
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.BYE);
+      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.Constants.ACK);
+      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.Constants.BYE);
     });
 
     it('emits failed if the branch on which early media was established is not the branch that picks up first (invite w/ sdp case)', function() {
@@ -1971,7 +1971,7 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveInviteResponse(resp);
 
-      expect(InviteClientContext.failed).toHaveBeenCalledWith(resp, SIP.C.causes.WEBRTC_ERROR);
+      expect(InviteClientContext.failed).toHaveBeenCalledWith(resp, SIP.Constants.causes.WEBRTC_ERROR);
     });
 
     it('ACKs any 200 OKs from the branch on which the call is up after the initial 200 OK', function() {
@@ -1981,7 +1981,7 @@ describe('InviteClientContext', function() {
 
       InviteClientContext.receiveInviteResponse(response);
 
-      expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
+      expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.Constants.ACK, {cseq: response.cseq});
     });
 
     it('PRACKS any non 200 response when it already chose a dialog', function() {
@@ -2005,7 +2005,7 @@ describe('InviteClientContext', function() {
       InviteClientContext.receiveInviteResponse(resp);
 
       expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked).toContain('9060');
-      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.C.PRACK);
+      expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest.calls.argsFor(0)[1]).toBe(SIP.Constants.PRACK);
     });
 
     it('cancels the request if the call was canceled and the response is 1xx', function() {
@@ -2160,7 +2160,7 @@ describe('InviteClientContext', function() {
         InviteClientContext.receiveInviteResponse(resp);
 
         expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].pracked).toContain('9060');
-        expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.C.PRACK, {extraHeaders: ['RAck: 9060 9059 INVITE']});
+        expect(InviteClientContext.earlyDialogs[resp.call_id+resp.from_tag+resp.to_tag].sendRequest).toHaveBeenCalledWith(InviteClientContext, SIP.Constants.PRACK, {extraHeaders: ['RAck: 9060 9059 INVITE']});
       });
 
       it('calls MediaHandler.setDescription for a response with a body with require: 100rel and confirms the dialog', function() {
@@ -2278,7 +2278,7 @@ describe('InviteClientContext', function() {
         InviteClientContext.receiveInviteResponse(response);
 
         expect(InviteClientContext.acceptAndTerminate).toHaveBeenCalledWith(response, 400, 'Missing session description');
-        expect(InviteClientContext.failed).toHaveBeenCalledWith(response, SIP.C.causes.BAD_MEDIA_DESCRIPTION);
+        expect(InviteClientContext.failed).toHaveBeenCalledWith(response, SIP.Constants.causes.BAD_MEDIA_DESCRIPTION);
       });
 
       it('uses the dialog with pre-established media, changes the status to confirmed, ACKS, and calls accepted if that dialog exists for this response and the request had no body', function() {
@@ -2295,7 +2295,7 @@ describe('InviteClientContext', function() {
 
         InviteClientContext.receiveInviteResponse(response);
 
-        expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.C.ACK, {cseq: response.cseq});
+        expect(InviteClientContext.sendRequest).toHaveBeenCalledWith(SIP.Constants.ACK, {cseq: response.cseq});
         expect(InviteClientContext.accepted).toHaveBeenCalledWith(response);
       });
 
@@ -2476,7 +2476,7 @@ describe('InviteClientContext', function() {
     xit('sets the status to CANCELED, replies 487, and calls canceled and failed if the status is EARLY_MEDIA and the request method is CANCELED', function() {
       // TODO - UAC shouldn't receive CANCEL.  Error response instead?
       InviteClientContext.status = 11;
-      request.method = SIP.C.CANCEL;
+      request.method = SIP.Constants.CANCEL;
 
       spyOn(InviteClientContext, 'canceled');
       spyOn(InviteClientContext, 'failed');
@@ -2487,12 +2487,12 @@ describe('InviteClientContext', function() {
       expect(InviteClientContext.status).toBe(9);
       expect(InviteClientContext.request.reply).toHaveBeenCalledWith(487);
       expect(InviteClientContext.canceled).toHaveBeenCalled();
-      expect(InviteClientContext.failed.calls.mostRecent().args[1]).toBe(SIP.C.causes.CANCELED);
+      expect(InviteClientContext.failed.calls.mostRecent().args[1]).toBe(SIP.Constants.causes.CANCELED);
     });
 
     it('replies 200 and emits bye and terminated if the request method is BYE', function() {
       InviteClientContext.status = 12;
-      request.method = SIP.C.BYE;
+      request.method = SIP.Constants.BYE;
       spyOn(InviteClientContext, 'emit');
       spyOn(InviteClientContext, 'terminated');
 
@@ -2500,12 +2500,12 @@ describe('InviteClientContext', function() {
 
       expect(request.reply).toHaveBeenCalledWith(200);
       expect(InviteClientContext.emit.calls.mostRecent().args[0]).toBe('bye');
-      expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.C.causes.BYE);
+      expect(InviteClientContext.terminated).toHaveBeenCalledWith(request, SIP.Constants.causes.BYE);
     });
 
     xit('logs and calls receiveReinvite if request method is INVITE', function() {
       InviteClientContext.status = 12;
-      request.method = SIP.C.INVITE;
+      request.method = SIP.Constants.INVITE;
 
       spyOn(InviteClientContext.logger, 'log');
       spyOn(InviteClientContext, 'receiveReinvite');
@@ -2521,7 +2521,7 @@ describe('InviteClientContext', function() {
       InviteClientContext.timers.ackTimer = 1;
       InviteClientContext.timers.invite2xxTimer = 2;
       InviteClientContext.status = 7;
-      request.method = SIP.C.ACK;
+      request.method = SIP.Constants.ACK;
 
       spyOn(SIP.Timers, 'clearTimeout');
 
@@ -2538,7 +2538,7 @@ describe('InviteClientContext', function() {
 
     it('logs, replies 202, then calls callback and terminate if session.followRefer listener present', function() {
       InviteClientContext.status = 12;
-      request.method = SIP.C.REFER;
+      request.method = SIP.Constants.REFER;
       request.parseHeader = jasmine.createSpy('parseHeader').and.returnValue({uri: SIP.URI.parse('sip:carol@example.com')});
       InviteClientContext.dialog = new SIP.Dialog(InviteClientContext, request, 'UAC');
 /*       spyOn(InviteClientContext.dialog.sendRequest); */

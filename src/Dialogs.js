@@ -2,6 +2,8 @@
  * @fileoverview SIP Dialog
  */
 
+var Constants = require('./Constants');
+
 /**
  * @augments SIP
  * @class Class creating a SIP dialog.
@@ -130,7 +132,7 @@ Dialog.prototype = {
 
     if(!this.local_seqnum) { this.local_seqnum = Math.floor(Math.random() * 10000); }
 
-    cseq = (method === SIP.C.CANCEL || method === SIP.C.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
+    cseq = (method === Constants.CANCEL || method === Constants.ACK) ? this.invite_seqnum : this.local_seqnum += 1;
 
     request = new SIP.OutgoingRequest(
       method,
@@ -163,7 +165,7 @@ Dialog.prototype = {
       this.remote_seqnum = request.cseq;
     } else if(request.cseq < this.remote_seqnum) {
         //Do not try to reply to an ACK request.
-        if (request.method !== SIP.C.ACK) {
+        if (request.method !== Constants.ACK) {
           request.reply(500);
         }
         if (request.cseq === this.invite_seqnum) {
@@ -176,7 +178,7 @@ Dialog.prototype = {
 
     switch(request.method) {
       // RFC3261 14.2 Modifying an Existing Session -UAS BEHAVIOR-
-      case SIP.C.INVITE:
+      case Constants.INVITE:
         if (this.uac_pending_reply === true) {
           request.reply(491);
         } else if (this.uas_pending_reply === true) {
@@ -209,7 +211,7 @@ Dialog.prototype = {
           });
         }
         break;
-      case SIP.C.NOTIFY:
+      case Constants.NOTIFY:
         // RFC6665 3.2 Replace the dialog`s remote target URI if the request is accepted
         if(request.hasHeader('contact')) {
           request.server_transaction.on('stateChanged', function(){

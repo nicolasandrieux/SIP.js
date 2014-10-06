@@ -1,4 +1,5 @@
 var Timers = require('./Timers');
+var Constants = require('./Constants');
 
 module.exports = function (SIP) {
 
@@ -123,7 +124,7 @@ RegisterContext.prototype = {
           this.registrationExpiredTimer = Timers.setTimeout(function () {
             self.logger.warn('registration expired');
             if (self.registered) {
-              self.unregistered(null, SIP.C.causes.EXPIRES);
+              self.unregistered(null, Constants.causes.EXPIRES);
             }
           }, expires * 1000);
 
@@ -147,7 +148,7 @@ RegisterContext.prototype = {
             this.register(options);
           } else { //This response MUST contain a Min-Expires header field
             this.logger.warn('423 response received for REGISTER without Min-Expires');
-            this.registrationFailure(response, SIP.C.causes.SIP_FAILURE_CODE);
+            this.registrationFailure(response, Constants.causes.SIP_FAILURE_CODE);
           }
           break;
         default:
@@ -157,11 +158,11 @@ RegisterContext.prototype = {
     };
 
     this.onRequestTimeout = function() {
-      this.registrationFailure(null, SIP.C.causes.REQUEST_TIMEOUT);
+      this.registrationFailure(null, Constants.causes.REQUEST_TIMEOUT);
     };
 
     this.onTransportError = function() {
-      this.registrationFailure(null, SIP.C.causes.CONNECTION_ERROR);
+      this.registrationFailure(null, Constants.causes.CONNECTION_ERROR);
     };
 
     this.cseq++;
@@ -188,7 +189,7 @@ RegisterContext.prototype = {
     }
 
     if(this.registered) {
-      this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
+      this.unregistered(null, Constants.causes.CONNECTION_ERROR);
     }
   },
 
@@ -251,12 +252,12 @@ RegisterContext.prototype = {
 
     this.onRequestTimeout = function() {
       // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.REQUEST_TIMEOUT);
+      //this.unregistered(null, Constants.causes.REQUEST_TIMEOUT);
     };
 
     this.onTransportError = function() {
       // Not actually unregistered...
-      //this.unregistered(null, SIP.C.causes.CONNECTION_ERROR);
+      //this.unregistered(null, Constants.causes.CONNECTION_ERROR);
     };
 
     this.cseq++;
