@@ -1,4 +1,5 @@
 var Timers = require('./Timers');
+var Exceptions = require('./Exceptions');
 
 module.exports = function (SIP) {
 
@@ -132,7 +133,7 @@ Session.prototype = {
 
     // Check Session Status
     if (this.status !== C.STATUS_CONFIRMED && this.status !== C.STATUS_WAITING_FOR_ACK) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     // Check tones
@@ -219,7 +220,7 @@ Session.prototype = {
 
       // Check Session Status
       if (this.status !== C.STATUS_CONFIRMED) {
-        throw new SIP.Exceptions.InvalidStateError(this.status);
+        throw new Exceptions.InvalidStateError(this.status);
       }
 
       // normalizeTarget allows instances of SIP.URI to pass through unaltered,
@@ -462,7 +463,7 @@ Session.prototype = {
   hold: function() {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.mediaHandler.hold();
@@ -508,7 +509,7 @@ Session.prototype = {
   unhold: function() {
 
     if (this.status !== C.STATUS_WAITING_FOR_ACK && this.status !== C.STATUS_CONFIRMED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.mediaHandler.unhold();
@@ -581,7 +582,7 @@ Session.prototype = {
     })
     .catch(function onFailure (e) {
       var statusCode;
-      if (e instanceof SIP.Exceptions.GetDescriptionError) {
+      if (e instanceof Exceptions.GetDescriptionError) {
         statusCode = 500;
       } else {
         self.logger.error(e);
@@ -1056,7 +1057,7 @@ InviteServerContext.prototype = {
   reject: function(options) {
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.logger.log('rejecting RTCSession');
@@ -1308,7 +1309,7 @@ InviteServerContext.prototype = {
     } else if (this.status === C.STATUS_WAITING_FOR_ANSWER) {
       this.status = C.STATUS_ANSWERED;
     } else if (this.status !== C.STATUS_EARLY_MEDIA) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     // An error on dialog creation will fire 'failed' event
@@ -1517,7 +1518,7 @@ InviteClientContext = function(ua, target, options) {
 
   // Check WebRTC support
   if (isMediaSupported && !isMediaSupported()) {
-    throw new SIP.Exceptions.NotSupportedError('Media not supported');
+    throw new Exceptions.NotSupportedError('Media not supported');
   }
 
   this.RTCConstraints = options.RTCConstraints || {};
@@ -1568,7 +1569,7 @@ InviteClientContext = function(ua, target, options) {
 
   // Check Session Status
   if (this.status !== C.STATUS_NULL) {
-    throw new SIP.Exceptions.InvalidStateError(this.status);
+    throw new Exceptions.InvalidStateError(this.status);
   }
 
   // Session parameter initialization
@@ -1841,7 +1842,7 @@ InviteClientContext.prototype = {
               session.emit('progress', response);
             })
             .catch(function onFailure(e) {
-              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+              if (e instanceof Exceptions.GetDescriptionError) {
                 earlyDialog.pracked.push(response.getHeader('rseq'));
                 if (session.status === C.STATUS_TERMINATED) {
                   return;
@@ -1959,7 +1960,7 @@ InviteClientContext.prototype = {
               session.accepted(response);
             })
             .catch(function onFailure(e) {
-              if (e instanceof SIP.Exceptions.GetDescriptionError) {
+              if (e instanceof Exceptions.GetDescriptionError) {
                 // TODO do something here
                 session.logger.warn("there was a problem");
               } else {
@@ -2028,7 +2029,7 @@ InviteClientContext.prototype = {
 
     // Check Session Status
     if (this.status === C.STATUS_TERMINATED) {
-      throw new SIP.Exceptions.InvalidStateError(this.status);
+      throw new Exceptions.InvalidStateError(this.status);
     }
 
     this.logger.log('canceling RTCSession');

@@ -3,6 +3,7 @@
  */
 
 var EventEmitter = require('../EventEmitter');
+var Exceptions = require('../Exceptions');
 
 /**
  * @class DTMF
@@ -95,7 +96,7 @@ DTMF.prototype.send = function(options) {
   // Check RTCSession Status
   if (this.owner.status !== SIP.Session.C.STATUS_CONFIRMED &&
     this.owner.status !== SIP.Session.C.STATUS_WAITING_FOR_ACK) {
-    throw new SIP.Exceptions.InvalidStateError(this.owner.status);
+    throw new Exceptions.InvalidStateError(this.owner.status);
   }
 
   // Get DTMF options

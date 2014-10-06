@@ -2,6 +2,8 @@
  * @fileoverview MediaHandler
  */
 
+var Exceptions = require('../Exceptions');
+
 /* MediaHandler
  * @class PeerConnection helper Class.
  * @param {SIP.Session} session
@@ -447,7 +449,7 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       .catch(function methodFailed (e) {
         self.logger.error(e);
         self.ready = true;
-        throw new SIP.Exceptions.GetDescriptionError(e);
+        throw new Exceptions.GetDescriptionError(e);
       })
     ;
   }},

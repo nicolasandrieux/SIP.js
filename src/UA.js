@@ -1,5 +1,6 @@
 var EventEmitter = require('./EventEmitter');
 var Timers = require('./Timers');
+var Exceptions = require('./Exceptions');
 
 /**
  * @augments SIP
@@ -912,14 +913,14 @@ UA.prototype.loadConfig = function(configuration) {
   for(parameter in UA.configuration_check.mandatory) {
     aliasUnderscored(parameter, this.logger);
     if(!configuration.hasOwnProperty(parameter)) {
-      throw new SIP.Exceptions.ConfigurationError(parameter);
+      throw new Exceptions.ConfigurationError(parameter);
     } else {
       value = configuration[parameter];
       checked_value = UA.configuration_check.mandatory[parameter](value);
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
-        throw new SIP.Exceptions.ConfigurationError(parameter, value);
+        throw new Exceptions.ConfigurationError(parameter, value);
       }
     }
   }
@@ -942,7 +943,7 @@ UA.prototype.loadConfig = function(configuration) {
       if (checked_value !== undefined) {
         settings[parameter] = checked_value;
       } else {
-        throw new SIP.Exceptions.ConfigurationError(parameter, value);
+        throw new Exceptions.ConfigurationError(parameter, value);
       }
     }
   }
@@ -951,7 +952,7 @@ UA.prototype.loadConfig = function(configuration) {
 
   // Connection recovery intervals
   if(settings.connectionRecoveryMaxInterval < settings.connectionRecoveryMinInterval) {
-    throw new SIP.Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
+    throw new Exceptions.ConfigurationError('connectionRecoveryMaxInterval', settings.connectionRecoveryMaxInterval);
   }
 
   // Post Configuration Process

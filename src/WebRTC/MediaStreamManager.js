@@ -4,6 +4,7 @@
 
 var EventEmitter = require('../EventEmitter');
 var Timers = require('../Timers');
+var Exceptions = require('../Exceptions');
 
 /* MediaStreamManager
  * @class Manages the acquisition and release of MediaStreams.
@@ -14,7 +15,7 @@ module.exports = function (SIP) {
 // Default MediaStreamManager provides single-use streams created with getUserMedia
 var MediaStreamManager = function MediaStreamManager (logger, defaultMediaHint) {
   if (!SIP.WebRTC.isSupported()) {
-    throw new SIP.Exceptions.NotSupportedError('Media not supported');
+    throw new Exceptions.NotSupportedError('Media not supported');
   }
 
   var events = [
