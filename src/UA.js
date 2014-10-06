@@ -1,6 +1,7 @@
 var EventEmitter = require('./EventEmitter');
 var Timers = require('./Timers');
 var Exceptions = require('./Exceptions');
+var LoggerFactory = require('./LoggerFactory');
 
 /**
  * @augments SIP
@@ -80,7 +81,7 @@ UA = function(configuration) {
   // Set Accepted Body Types
   C.ACCEPTED_BODY_TYPES = C.ACCEPTED_BODY_TYPES.toString();
 
-  this.log = new SIP.LoggerFactory();
+  this.log = new LoggerFactory();
   this.logger = this.getLogger('sip.ua');
 
   this.cache = {
