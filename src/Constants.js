@@ -2,13 +2,16 @@
  * @fileoverview SIP Constants
  */
 
+var pkg = require('../package.json');
+var name = pkg.title;
+var version = pkg.version;
+
 /**
  * SIP Constants.
  * @augments SIP
  */
 
-module.exports = function (name, version) {
-return {
+module.exports = {
   USER_AGENT: name +'/'+ version,
 
   // SIP scheme
@@ -156,5 +159,4 @@ return {
     604: 'Does Not Exist Anywhere',
     606: 'Not Acceptable'
   }
-};
 };
