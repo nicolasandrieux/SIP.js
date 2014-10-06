@@ -1,3 +1,5 @@
+var EventEmitter = require('./EventEmitter');
+
 /**
  * @augments SIP
  * @class Class creating a SIP User Agent.
@@ -195,7 +197,7 @@ UA = function(configuration) {
     this.start();
   }
 };
-UA.prototype = new SIP.EventEmitter();
+UA.prototype = new EventEmitter();
 
 //=================
 //  High Level API

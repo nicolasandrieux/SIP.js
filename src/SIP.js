@@ -33,7 +33,7 @@ SIP.Transactions = require('./Transactions')(SIP);
 SIP.Dialog = require('./Dialogs')(SIP);
 SIP.RequestSender = require('./RequestSender')(SIP);
 SIP.RegisterContext = require('./RegisterContext')(SIP);
-SIP.MediaHandler = require('./MediaHandler')(SIP.EventEmitter);
+SIP.MediaHandler = require('./MediaHandler');
 SIP.ClientContext = require('./ClientContext')(SIP);
 SIP.ServerContext = require('./ServerContext')(SIP);
 require('./Session')(SIP);

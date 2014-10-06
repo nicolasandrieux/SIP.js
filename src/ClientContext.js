@@ -1,3 +1,5 @@
+var EventEmitter = require('./EventEmitter');
+
 module.exports = function (SIP) {
 var ClientContext;
 
@@ -50,7 +52,7 @@ ClientContext = function (ua, method, target, options) {
 
   this.initEvents(events);
 };
-ClientContext.prototype = new SIP.EventEmitter();
+ClientContext.prototype = new EventEmitter();
 
 ClientContext.prototype.send = function () {
   (new SIP.RequestSender(this, this.ua)).send();

@@ -2,6 +2,8 @@
  * @fileoverview MediaStreamManager
  */
 
+var EventEmitter = require('../EventEmitter');
+
 /* MediaStreamManager
  * @class Manages the acquisition and release of MediaStreams.
  * @param {mediaHint} [defaultMediaHint] The mediaHint to use if none is provided to acquire()
@@ -85,7 +87,7 @@ MediaStreamManager.render = function render (stream, elements) {
   }
 };
 
-MediaStreamManager.prototype = Object.create(SIP.EventEmitter.prototype, {
+MediaStreamManager.prototype = Object.create(EventEmitter.prototype, {
   'acquire': {value: function acquire (mediaHint) {
     mediaHint = Object.keys(mediaHint || {}).length ? mediaHint : this.mediaHint;
 

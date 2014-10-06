@@ -2,6 +2,8 @@
  * @fileoverview DTMF
  */
 
+var EventEmitter = require('../EventEmitter');
+
 /**
  * @class DTMF
  * @param {SIP.Session} session
@@ -82,7 +84,7 @@ DTMF = function(session, tone, options) {
 
   this.initEvents(events);
 };
-DTMF.prototype = new SIP.EventEmitter();
+DTMF.prototype = new EventEmitter();
 
 
 DTMF.prototype.send = function(options) {

@@ -2,6 +2,8 @@
  * @fileoverview SIP Transactions
  */
 
+var EventEmitter = require('./EventEmitter');
+
 /**
  * SIP Transactions module.
  * @augments SIP
@@ -53,7 +55,7 @@ var NonInviteClientTransaction = function(request_sender, request, transport) {
 
   this.initEvents(events);
 };
-NonInviteClientTransaction.prototype = new SIP.EventEmitter();
+NonInviteClientTransaction.prototype = new EventEmitter();
 
 NonInviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -163,7 +165,7 @@ var InviteClientTransaction = function(request_sender, request, transport) {
 
   this.initEvents(events);
 };
-InviteClientTransaction.prototype = new SIP.EventEmitter();
+InviteClientTransaction.prototype = new EventEmitter();
 
 InviteClientTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -338,7 +340,7 @@ var AckClientTransaction = function(request_sender, request, transport) {
 
   this.request.setHeader('via', via);
 };
-AckClientTransaction.prototype = new SIP.EventEmitter();
+AckClientTransaction.prototype = new EventEmitter();
 
 AckClientTransaction.prototype.send = function() {
   if(!this.transport.send(this.request)) {
@@ -377,7 +379,7 @@ var NonInviteServerTransaction = function(request, ua) {
 
   this.initEvents(events);
 };
-NonInviteServerTransaction.prototype = new SIP.EventEmitter();
+NonInviteServerTransaction.prototype = new EventEmitter();
 
 NonInviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;
@@ -480,7 +482,7 @@ var InviteServerTransaction = function(request, ua) {
 
   this.initEvents(events);
 };
-InviteServerTransaction.prototype = new SIP.EventEmitter();
+InviteServerTransaction.prototype = new EventEmitter();
 
 InviteServerTransaction.prototype.stateChanged = function(state) {
   this.state = state;

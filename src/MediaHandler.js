@@ -2,13 +2,14 @@
  * @fileoverview MediaHandler
  */
 
+var EventEmitter = require('./EventEmitter');
+
 /* MediaHandler
  * @class PeerConnection helper Class.
  * @param {SIP.Session} session
  * @param {Object} [options]
  */
-module.exports = function (EventEmitter) {
-var MediaHandler = function(session, options) {
+var MediaHandler = module.exports = function(session, options) {
   // keep jshint happy
   session = session;
   options = options;
@@ -37,6 +38,3 @@ MediaHandler.prototype = Object.create(EventEmitter.prototype, {
     description = description;
   }}
 });
-
-return MediaHandler;
-};
