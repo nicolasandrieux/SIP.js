@@ -2,6 +2,8 @@
  * @fileoverview Transport
  */
 
+var Timers = require('./Timers');
+
 /**
  * @augments SIP
  * @class Transport
@@ -62,7 +64,7 @@ Transport.prototype = {
   disconnect: function() {
     if(this.ws) {
       // Clear reconnectTimer
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      Timers.clearTimeout(this.reconnectTimer);
 
       this.closed = true;
       this.logger.log('closing WebSocket ' + this.server.ws_uri);
@@ -70,7 +72,7 @@ Transport.prototype = {
     }
 
     if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      Timers.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
       this.ua.emit('disconnected', {
         transport: this,
@@ -136,7 +138,7 @@ Transport.prototype = {
     this.logger.log('WebSocket ' + this.server.ws_uri + ' connected');
     // Clear reconnectTimer since we are not disconnected
     if (this.reconnectTimer !== null) {
-      SIP.Timers.clearTimeout(this.reconnectTimer);
+      Timers.clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
     // Reset reconnection_attempts
@@ -283,7 +285,7 @@ Transport.prototype = {
     } else {
       this.logger.log('trying to reconnect to WebSocket ' + this.server.ws_uri + ' (reconnection attempt ' + this.reconnection_attempts + ')');
 
-      this.reconnectTimer = SIP.Timers.setTimeout(function() {
+      this.reconnectTimer = Timers.setTimeout(function() {
         transport.connect();
         transport.reconnectTimer = null;
       }, this.ua.configuration.wsServerReconnectionTimeout * 1000);

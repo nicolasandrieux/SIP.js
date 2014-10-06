@@ -1,4 +1,5 @@
 var EventEmitter = require('./EventEmitter');
+var Timers = require('./Timers');
 
 /**
  * @augments SIP
@@ -322,7 +323,7 @@ UA.prototype.stop = function() {
   }
 
   // Clear transportRecoveryTimer
-  SIP.Timers.clearTimeout(this.transportRecoveryTimer);
+  Timers.clearTimeout(this.transportRecoveryTimer);
 
   // Close registerContext
   this.logger.log('closing registerContext');
@@ -811,7 +812,7 @@ UA.prototype.recoverTransport = function(ua) {
 
   this.logger.log('next connection attempt in '+ nextRetry +' seconds');
 
-  this.transportRecoveryTimer = SIP.Timers.setTimeout(
+  this.transportRecoveryTimer = Timers.setTimeout(
     function(){
       ua.transportRecoverAttempts = count + 1;
       new SIP.Transport(ua, server);

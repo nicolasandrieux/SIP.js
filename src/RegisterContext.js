@@ -1,3 +1,5 @@
+var Timers = require('./Timers');
+
 module.exports = function (SIP) {
 
 var RegisterContext;
@@ -67,7 +69,7 @@ RegisterContext.prototype = {
 
       // Clear registration timer
       if (this.registrationTimer !== null) {
-        SIP.Timers.clearTimeout(this.registrationTimer);
+        Timers.clearTimeout(this.registrationTimer);
         this.registrationTimer = null;
       }
 
@@ -83,7 +85,7 @@ RegisterContext.prototype = {
           }
 
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            Timers.clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
 
@@ -114,11 +116,11 @@ RegisterContext.prototype = {
 
           // Re-Register before the expiration interval has elapsed.
           // For that, decrease the expires value. ie: 3 seconds
-          this.registrationTimer = SIP.Timers.setTimeout(function() {
+          this.registrationTimer = Timers.setTimeout(function() {
             self.registrationTimer = null;
             self.register(options);
           }, (expires * 1000) - 3000);
-          this.registrationExpiredTimer = SIP.Timers.setTimeout(function () {
+          this.registrationExpiredTimer = Timers.setTimeout(function () {
             self.logger.warn('registration expired');
             if (self.registered) {
               self.unregistered(null, SIP.C.causes.EXPIRES);
@@ -176,12 +178,12 @@ RegisterContext.prototype = {
   onTransportClosed: function() {
     this.registered_before = this.registered;
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      Timers.clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
     if (this.registrationExpiredTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+      Timers.clearTimeout(this.registrationExpiredTimer);
       this.registrationExpiredTimer = null;
     }
 
@@ -214,7 +216,7 @@ RegisterContext.prototype = {
 
     // Clear the registration timer.
     if (this.registrationTimer !== null) {
-      SIP.Timers.clearTimeout(this.registrationTimer);
+      Timers.clearTimeout(this.registrationTimer);
       this.registrationTimer = null;
     }
 
@@ -236,7 +238,7 @@ RegisterContext.prototype = {
         case /^2[0-9]{2}$/.test(response.status_code):
           this.emit('accepted', response);
           if (this.registrationExpiredTimer !== null) {
-            SIP.Timers.clearTimeout(this.registrationExpiredTimer);
+            Timers.clearTimeout(this.registrationExpiredTimer);
             this.registrationExpiredTimer = null;
           }
           this.unregistered(response);

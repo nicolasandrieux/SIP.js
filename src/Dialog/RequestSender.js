@@ -3,6 +3,8 @@
  * @fileoverview In-Dialog Request Sender
  */
 
+var Timers = require('../Timers');
+
 /**
  * @augments SIP.Dialog
  * @class Class creating an In-dialog request sender.
@@ -73,7 +75,7 @@ RequestSender.prototype = {
         this.applicant.receiveResponse(response);
       } else {
         this.request.cseq.value = this.dialog.local_seqnum += 1;
-        this.reattemptTimer = SIP.Timers.setTimeout(
+        this.reattemptTimer = Timers.setTimeout(
           function() {
             if (self.applicant.owner.status !== SIP.Session.C.STATUS_TERMINATED) {
               self.reattempt = true;

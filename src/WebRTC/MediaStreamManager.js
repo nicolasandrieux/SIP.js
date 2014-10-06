@@ -3,6 +3,7 @@
  */
 
 var EventEmitter = require('../EventEmitter');
+var Timers = require('../Timers');
 
 /* MediaStreamManager
  * @class Manages the acquisition and release of MediaStreams.
@@ -66,12 +67,12 @@ MediaStreamManager.render = function render (stream, elements) {
 
   function ensureMediaPlaying (mediaElement) {
     var interval = 100;
-    mediaElement.ensurePlayingIntervalId = SIP.Timers.setInterval(function () {
+    mediaElement.ensurePlayingIntervalId = Timers.setInterval(function () {
       if (mediaElement.paused) {
         mediaElement.play();
       }
       else {
-        SIP.Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
+        Timers.clearInterval(mediaElement.ensurePlayingIntervalId);
       }
     }, interval);
   }
@@ -111,7 +112,7 @@ MediaStreamManager.prototype = Object.create(EventEmitter.prototype, {
        * Make the call asynchronous, so that ICCs have a chance
        * to define callbacks to `userMediaRequest`
        */
-      SIP.Timers.setTimeout(function () {
+      Timers.setTimeout(function () {
         this.emit('userMediaRequest', constraints);
 
         var emitThenCall = function (eventName, callback) {
