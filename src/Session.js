@@ -1,5 +1,6 @@
 var Timers = require('./Timers');
 var Exceptions = require('./Exceptions');
+var Hacks = require('./Hacks');
 
 module.exports = function (SIP) {
 
@@ -270,7 +271,7 @@ Session.prototype = {
         return;
       }
 
-      SIP.Hacks.Chrome.getsConfusedAboutGUM(this);
+      Hacks.Chrome.getsConfusedAboutGUM(this);
 
       /*
         Harmless race condition.  Both sides of REFER
@@ -954,8 +955,8 @@ InviteServerContext = function(ua, request) {
   }
 
   //TODO: move this into media handler
-  SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
-  SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
+  Hacks.Firefox.cannotHandleRelayCandidates(request);
+  Hacks.Firefox.cannotHandleExtraWhitespace(request);
 
   SIP.Utils.augment(this, SIP.ServerContext, [ua, request]);
   SIP.Utils.augment(this, SIP.Session, [ua.configuration.mediaHandlerFactory]);
@@ -1418,8 +1419,8 @@ InviteServerContext.prototype = {
         if (!this.hasAnswer) {
           if(request.body && request.getHeader('content-type') === 'application/sdp') {
             // ACK contains answer to an INVITE w/o SDP negotiation
-            SIP.Hacks.Firefox.cannotHandleRelayCandidates(request);
-            SIP.Hacks.Firefox.cannotHandleExtraWhitespace(request);
+            Hacks.Firefox.cannotHandleRelayCandidates(request);
+            Hacks.Firefox.cannotHandleExtraWhitespace(request);
 
             this.hasAnswer = true;
             this.mediaHandler.setDescription(request.body)
@@ -1776,9 +1777,9 @@ InviteClientContext.prototype = {
             return;
           }
 
-          SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
-          SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
-          SIP.Hacks.AllBrowsers.maskDtls(response);
+          Hacks.Firefox.cannotHandleRelayCandidates(response);
+          Hacks.Firefox.cannotHandleExtraWhitespace(response);
+          Hacks.AllBrowsers.maskDtls(response);
 
           if (!response.body) {
             extraHeaders.push('RAck: ' + response.getHeader('rseq') + ' ' + response.getHeader('cseq'));
@@ -1894,9 +1895,9 @@ InviteClientContext.prototype = {
           break;
         }
 
-        SIP.Hacks.Firefox.cannotHandleRelayCandidates(response);
-        SIP.Hacks.Firefox.cannotHandleExtraWhitespace(response);
-        SIP.Hacks.AllBrowsers.maskDtls(response);
+        Hacks.Firefox.cannotHandleRelayCandidates(response);
+        Hacks.Firefox.cannotHandleExtraWhitespace(response);
+        Hacks.AllBrowsers.maskDtls(response);
 
         // This is an invite without sdp
         if (!this.hasOffer) {
@@ -1939,7 +1940,7 @@ InviteClientContext.prototype = {
                 return;
               }
 
-              sdp = SIP.Hacks.Firefox.hasMissingCLineInSDP(sdp);
+              sdp = Hacks.Firefox.hasMissingCLineInSDP(sdp);
 
               session.status = C.STATUS_CONFIRMED;
               session.hasAnswer = true;

@@ -3,6 +3,7 @@
  */
 
 var Exceptions = require('../Exceptions');
+var Hacks = require('../Hacks');
 
 /* MediaHandler
  * @class PeerConnection helper Class.
@@ -433,8 +434,8 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
       .then(function readySuccess () {
         var sdp = pc.localDescription.sdp;
 
-        sdp = SIP.Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
-        sdp = SIP.Hacks.AllBrowsers.unmaskDtls(sdp);
+        sdp = Hacks.Chrome.needsExplicitlyInactiveSDP(sdp);
+        sdp = Hacks.AllBrowsers.unmaskDtls(sdp);
 
         var sdpWrapper = {
           type: methodName === 'createOffer' ? 'offer' : 'answer',

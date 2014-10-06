@@ -40,7 +40,6 @@ require('./Session')(SIP);
 SIP.Subscription = require('./Subscription')(SIP);
 SIP.WebRTC = require('./WebRTC')(SIP);
 SIP.UA = require('./UA')(SIP);
-SIP.Hacks = require('./Hacks');
 SIP.sanityCheck = require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
 SIP.Grammar = require('./Grammar/dist/Grammar')(SIP);
