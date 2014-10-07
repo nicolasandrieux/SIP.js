@@ -4,7 +4,7 @@ extend(exports, require('./environment_browser'));
 
 extend(exports, {
   WebSocket: require('ws'),
-  Promise: global.Promise || require('promiscuous'),
+  Promise: global.Promise || require('promise'),
   console: require('console'),
   timers: require('timers')
 });

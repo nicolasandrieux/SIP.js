@@ -49,9 +49,7 @@
   },
   "dependencies": {
     "pegjs": "0.8.0",
+    "promise": "^6.0.0",
     "ws": "^0.4.32"
-  },
-  "optionalDependencies": {
-    "promiscuous": "^0.6.0"
   }
 }
