@@ -1,4 +1,10 @@
-{options.data = {};} // Object to which header attributes will be assigned during parsing
+{
+  options.data = {}; // Object to which header attributes will be assigned during parsing
+
+  function list (first, rest) {
+    return [first].concat(rest);
+  }
+}
 
 // ABNF BASIC
 
@@ -684,7 +690,16 @@ r_param = generic_param
 
 // REQUIRE
 
-Require       = option_tag (COMMA option_tag)*
+Require   =  value:(
+                first:option_tag
+                rest:(COMMA r:option_tag {return r;})*
+                { return list(first, rest); }
+              )?
+              {
+                if (options.startRule === 'Require') {
+                  options.data = value || [];
+                }
+              }
 
 
 // ROUTE
@@ -736,7 +751,16 @@ Subject  = ( TEXT_UTF8_TRIM )?
 
 // SUPPORTED
 
-Supported  = ( option_tag (COMMA option_tag)* )?
+Supported  =  value:(
+                first:option_tag
+                rest:(COMMA r:option_tag {return r;})*
+                { return list(first, rest); }
+              )?
+              {
+                if (options.startRule === 'Supported') {
+                  options.data = value || [];
+                }
+              }
 
 
 // TO
