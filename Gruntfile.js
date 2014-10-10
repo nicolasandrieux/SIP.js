@@ -169,9 +169,17 @@ module.exports = function(grunt) {
     console.log('"grammar" task: applying custom changes to Grammar.js ...');
     var fs = require('fs');
     var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-    var modified_grammar = grammar.replace(/throw peg.*maxFailPos.*/, 'return -1;');
-    modified_grammar = modified_grammar.replace(/return peg.*result.*/, 'return data;');
-    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1function (input, startRule) {return parse(input, {startRule: startRule});}');
+    var modified_grammar = grammar;
+    function parseCustom (input, startRule) {
+      var options = {startRule: startRule};
+      try {
+        parse(input, options);
+      } catch (e) {
+        options.data = -1;
+      }
+      return options.data;
+    }
+    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1' + parseCustom);
     modified_grammar = modified_grammar.replace(/\(function\(\)/, 'function(SIP)').replace(/\}\)\(\)/, '}');
 
     // Don't jshint this big chunk of minified code

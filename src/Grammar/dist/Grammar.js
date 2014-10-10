@@ -154,54 +154,54 @@ module.exports = function(SIP) {
           /^[\x0E-]/,
           { type: "class", value: "[\\x0E-]", description: "[\\x0E-]" },
           function() {
-                                  data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port);
-                                  delete data.scheme;
-                                  delete data.user;
-                                  delete data.host;
-                                  delete data.host_type;
-                                  delete data.port;
+                                  options.data.uri = new SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port);
+                                  delete options.data.scheme;
+                                  delete options.data.user;
+                                  delete options.data.host;
+                                  delete options.data.host_type;
+                                  delete options.data.port;
                                 },
           function() {
-                                  data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
-                                  delete data.scheme;
-                                  delete data.user;
-                                  delete data.host;
-                                  delete data.host_type;
-                                  delete data.port;
-                                  delete data.uri_params;
+                                  options.data.uri = new SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
+                                  delete options.data.scheme;
+                                  delete options.data.user;
+                                  delete options.data.host;
+                                  delete options.data.host_type;
+                                  delete options.data.port;
+                                  delete options.data.uri_params;
 
-                                  if (options.startRule === 'SIP_URI') { data = data.uri;}
+                                  if (options.startRule === 'SIP_URI') { options.data = options.data.uri;}
                                 },
           "sips",
           { type: "literal", value: "sips", description: "\"sips\"" },
           "sip",
           { type: "literal", value: "sip", description: "\"sip\"" },
           function(uri_scheme) {
-                              data.scheme = uri_scheme.toLowerCase(); },
+                              options.data.scheme = uri_scheme.toLowerCase(); },
           function() {
-                              data.user = decodeURIComponent(text().slice(0, -1));},
+                              options.data.user = decodeURIComponent(text().slice(0, -1));},
           function() {
-                              data.password = text(); },
+                              options.data.password = text(); },
           function() {
-                              data.host = text().toLowerCase();
-                              return data.host; },
+                              options.data.host = text().toLowerCase();
+                              return options.data.host; },
           function() {
-                            data.host_type = 'domain';
+                            options.data.host_type = 'domain';
                             return text(); },
           /^[a-zA-Z0-9_\-]/,
           { type: "class", value: "[a-zA-Z0-9_\\-]", description: "[a-zA-Z0-9_\\-]" },
           /^[a-zA-Z0-9\-]/,
           { type: "class", value: "[a-zA-Z0-9\\-]", description: "[a-zA-Z0-9\\-]" },
           function() {
-                              data.host_type = 'IPv6';
+                              options.data.host_type = 'IPv6';
                               return text(); },
           "::",
           { type: "literal", value: "::", description: "\"::\"" },
           function() {
-                            data.host_type = 'IPv6';
+                            options.data.host_type = 'IPv6';
                             return text(); },
           function() {
-                              data.host_type = 'IPv4';
+                              options.data.host_type = 'IPv4';
                               return text(); },
           "25",
           { type: "literal", value: "25", description: "\"25\"" },
@@ -217,7 +217,7 @@ module.exports = function(SIP) {
           { type: "class", value: "[1-9]", description: "[1-9]" },
           function(port) {
                               port = parseInt(port.join(''));
-                              data.port = port;
+                              options.data.port = port;
                               return port; },
           "transport=",
           { type: "literal", value: "transport=", description: "\"transport=\"" },
@@ -230,8 +230,8 @@ module.exports = function(SIP) {
           "tls",
           { type: "literal", value: "tls", description: "\"tls\"" },
           function(transport) {
-                                if(!data.uri_params) data.uri_params={};
-                                data.uri_params['transport'] = transport.toLowerCase(); },
+                                if(!options.data.uri_params) options.data.uri_params={};
+                                options.data.uri_params['transport'] = transport.toLowerCase(); },
           "user=",
           { type: "literal", value: "user=", description: "\"user=\"" },
           "phone",
@@ -239,67 +239,67 @@ module.exports = function(SIP) {
           "ip",
           { type: "literal", value: "ip", description: "\"ip\"" },
           function(user) {
-                                if(!data.uri_params) data.uri_params={};
-                                data.uri_params['user'] = user.toLowerCase(); },
+                                if(!options.data.uri_params) options.data.uri_params={};
+                                options.data.uri_params['user'] = user.toLowerCase(); },
           "method=",
           { type: "literal", value: "method=", description: "\"method=\"" },
           function(method) {
-                                if(!data.uri_params) data.uri_params={};
-                                data.uri_params['method'] = method; },
+                                if(!options.data.uri_params) options.data.uri_params={};
+                                options.data.uri_params['method'] = method; },
           "ttl=",
           { type: "literal", value: "ttl=", description: "\"ttl=\"" },
           function(ttl) {
-                                if(!data.params) data.params={};
-                                data.params['ttl'] = ttl; },
+                                if(!options.data.params) options.data.params={};
+                                options.data.params['ttl'] = ttl; },
           "maddr=",
           { type: "literal", value: "maddr=", description: "\"maddr=\"" },
           function(maddr) {
-                                if(!data.uri_params) data.uri_params={};
-                                data.uri_params['maddr'] = maddr; },
+                                if(!options.data.uri_params) options.data.uri_params={};
+                                options.data.uri_params['maddr'] = maddr; },
           "lr",
           { type: "literal", value: "lr", description: "\"lr\"" },
           function() {
-                                if(!data.uri_params) data.uri_params={};
-                                data.uri_params['lr'] = undefined; },
+                                if(!options.data.uri_params) options.data.uri_params={};
+                                options.data.uri_params['lr'] = undefined; },
           function(param, value) {
-                                if(!data.uri_params) data.uri_params = {};
+                                if(!options.data.uri_params) options.data.uri_params = {};
                                 if (value === null){
                                   value = undefined;
                                 }
                                 else {
                                   value = value[1];
                                 }
-                                data.uri_params[param.toLowerCase()] = value && value.toLowerCase();},
+                                options.data.uri_params[param.toLowerCase()] = value && value.toLowerCase();},
           function(pname) {return pname.join(''); },
           function(pvalue) {return pvalue.join(''); },
           function(hname, hvalue) {
                                 hname = hname.join('').toLowerCase();
                                 hvalue = hvalue.join('');
-                                if(!data.uri_headers) data.uri_headers = {};
-                                if (!data.uri_headers[hname]) {
-                                  data.uri_headers[hname] = [hvalue];
+                                if(!options.data.uri_headers) options.data.uri_headers = {};
+                                if (!options.data.uri_headers[hname]) {
+                                  options.data.uri_headers[hname] = [hvalue];
                                 } else {
-                                  data.uri_headers[hname].push(hvalue);
+                                  options.data.uri_headers[hname].push(hvalue);
                                 }},
           function() {
                                 // lots of tests fail if this isn't guarded...
                                 if (options.startRule === 'Refer_To') {
-                                  data.uri = new SIP.URI(data.scheme, data.user, data.host, data.port, data.uri_params, data.uri_headers);
-                                  delete data.scheme;
-                                  delete data.user;
-                                  delete data.host;
-                                  delete data.host_type;
-                                  delete data.port;
-                                  delete data.uri_params;
+                                  options.data.uri = new SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
+                                  delete options.data.scheme;
+                                  delete options.data.user;
+                                  delete options.data.host;
+                                  delete options.data.host_type;
+                                  delete options.data.port;
+                                  delete options.data.uri_params;
                                 }
                               },
           "//",
           { type: "literal", value: "//", description: "\"//\"" },
           function() {
-                              data.scheme= text(); },
+                              options.data.scheme= text(); },
           { type: "literal", value: "SIP", description: "\"SIP\"" },
           function() {
-                              data.sip_version = text(); },
+                              options.data.sip_version = text(); },
           "INVITE",
           { type: "literal", value: "INVITE", description: "\"INVITE\"" },
           "ACK",
@@ -322,40 +322,40 @@ module.exports = function(SIP) {
           { type: "literal", value: "REFER", description: "\"REFER\"" },
           function() {
 
-                              data.method = text();
-                              return data.method; },
+                              options.data.method = text();
+                              return options.data.method; },
           function(status_code) {
-                            data.status_code = parseInt(status_code.join('')); },
+                            options.data.status_code = parseInt(status_code.join('')); },
           function() {
-                            data.reason_phrase = text(); },
+                            options.data.reason_phrase = text(); },
           function() {
-                        data = text(); },
+                        options.data = text(); },
           function() {
                                   var idx, length;
-                                  length = data.multi_header.length;
+                                  length = options.data.multi_header.length;
                                   for (idx = 0; idx < length; idx++) {
-                                    if (data.multi_header[idx].parsed === null) {
-                                      data = null;
+                                    if (options.data.multi_header[idx].parsed === null) {
+                                      options.data = null;
                                       break;
                                     }
                                   }
-                                  if (data !== null) {
-                                    data = data.multi_header;
+                                  if (options.data !== null) {
+                                    options.data = options.data.multi_header;
                                   } else {
-                                    data = -1;
+                                    options.data = -1;
                                   }},
           function() {
                                   var header;
-                                  if(!data.multi_header) data.multi_header = [];
+                                  if(!options.data.multi_header) options.data.multi_header = [];
                                   try {
-                                    header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-                                    delete data.uri;
-                                    delete data.displayName;
-                                    delete data.params;
+                                    header = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                                    delete options.data.uri;
+                                    delete options.data.displayName;
+                                    delete options.data.params;
                                   } catch(e) {
                                     header = null;
                                   }
-                                  data.multi_header.push( { 'position': peg$currPos,
+                                  options.data.multi_header.push( { 'position': peg$currPos,
                                                             'offset': offset(),
                                                             'parsed': header
                                                           });},
@@ -364,17 +364,17 @@ module.exports = function(SIP) {
                                   if (displayName[0] === '\"') {
                                     displayName = displayName.substring(1, displayName.length-1);
                                   }
-                                  data.displayName = displayName; },
+                                  options.data.displayName = displayName; },
           "q",
           { type: "literal", value: "q", description: "\"q\"" },
           function(q) {
-                                  if(!data.params) data.params = {};
-                                  data.params['q'] = q; },
+                                  if(!options.data.params) options.data.params = {};
+                                  options.data.params['q'] = q; },
           "expires",
           { type: "literal", value: "expires", description: "\"expires\"" },
           function(expires) {
-                                  if(!data.params) data.params = {};
-                                  data.params['expires'] = expires; },
+                                  if(!options.data.params) options.data.params = {};
+                                  options.data.params['expires'] = expires; },
           function(delta_seconds) {
                                   return parseInt(delta_seconds.join('')); },
           "0",
@@ -382,14 +382,14 @@ module.exports = function(SIP) {
           function() {
                                   return parseFloat(text()); },
           function(param, value) {
-                                  if(!data.params) data.params = {};
+                                  if(!options.data.params) options.data.params = {};
                                   if (value === null){
                                     value = undefined;
                                   }
                                   else {
                                     value = value[1];
                                   }
-                                  data.params[param.toLowerCase()] = value;},
+                                  options.data.params[param.toLowerCase()] = value;},
           "render",
           { type: "literal", value: "render", description: "\"render\"" },
           "session",
@@ -400,7 +400,7 @@ module.exports = function(SIP) {
           { type: "literal", value: "alert", description: "\"alert\"" },
           function() {
                                       if (options.startRule === 'Content_Disposition') {
-                                        data.type = text().toLowerCase();
+                                        options.data.type = text().toLowerCase();
                                       }
                                     },
           "handling",
@@ -410,9 +410,9 @@ module.exports = function(SIP) {
           "required",
           { type: "literal", value: "required", description: "\"required\"" },
           function(length) {
-                                  data = parseInt(length.join('')); },
+                                  options.data = parseInt(length.join('')); },
           function() {
-                                  data = text(); },
+                                  options.data = text(); },
           "text",
           { type: "literal", value: "text", description: "\"text\"" },
           "image",
@@ -430,45 +430,45 @@ module.exports = function(SIP) {
           "x-",
           { type: "literal", value: "x-", description: "\"x-\"" },
           function(cseq_value) {
-                            data.value=parseInt(cseq_value.join('')); },
-          function(expires) {data = expires; },
+                            options.data.value=parseInt(cseq_value.join('')); },
+          function(expires) {options.data = expires; },
           function(event_type) {
-                                 data.event = event_type.toLowerCase(); },
+                                 options.data.event = event_type.toLowerCase(); },
           function() {
-                          var tag = data.tag;
-                            data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-                            if (tag) {data.setParam('tag',tag)}
+                          var tag = options.data.tag;
+                            options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                            if (tag) {options.data.setParam('tag',tag)}
                           },
           "tag",
           { type: "literal", value: "tag", description: "\"tag\"" },
-          function(tag) {data.tag = tag; },
+          function(tag) {options.data.tag = tag; },
           function(forwards) {
-                            data = parseInt(forwards.join('')); },
-          function(min_expires) {data = min_expires; },
+                            options.data = parseInt(forwards.join('')); },
+          function(min_expires) {options.data = min_expires; },
           function() {
-                                  data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                                  options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                                 },
           "digest",
           { type: "literal", value: "Digest", description: "\"Digest\"" },
           "realm",
           { type: "literal", value: "realm", description: "\"realm\"" },
-          function(realm) { data.realm = realm; },
+          function(realm) { options.data.realm = realm; },
           "domain",
           { type: "literal", value: "domain", description: "\"domain\"" },
           "nonce",
           { type: "literal", value: "nonce", description: "\"nonce\"" },
-          function(nonce) { data.nonce=nonce; },
+          function(nonce) { options.data.nonce=nonce; },
           "opaque",
           { type: "literal", value: "opaque", description: "\"opaque\"" },
-          function(opaque) { data.opaque=opaque; },
+          function(opaque) { options.data.opaque=opaque; },
           "stale",
           { type: "literal", value: "stale", description: "\"stale\"" },
           "true",
           { type: "literal", value: "true", description: "\"true\"" },
-          function() { data.stale=true; },
+          function() { options.data.stale=true; },
           "false",
           { type: "literal", value: "false", description: "\"false\"" },
-          function() { data.stale=false; },
+          function() { options.data.stale=false; },
           "algorithm",
           { type: "literal", value: "algorithm", description: "\"algorithm\"" },
           "md5",
@@ -476,7 +476,7 @@ module.exports = function(SIP) {
           "md5-sess",
           { type: "literal", value: "MD5-sess", description: "\"MD5-sess\"" },
           function(algorithm) {
-                                data.algorithm=algorithm.toUpperCase(); },
+                                options.data.algorithm=algorithm.toUpperCase(); },
           "qop",
           { type: "literal", value: "qop", description: "\"qop\"" },
           "auth-int",
@@ -484,44 +484,44 @@ module.exports = function(SIP) {
           "auth",
           { type: "literal", value: "auth", description: "\"auth\"" },
           function(qop_value) {
-                                  data.qop || (data.qop=[]);
-                                  data.qop.push(qop_value.toLowerCase()); },
+                                  options.data.qop || (options.data.qop=[]);
+                                  options.data.qop.push(qop_value.toLowerCase()); },
           function(rack_value) {
-                            data.value=parseInt(rack_value.join('')); },
+                            options.data.value=parseInt(rack_value.join('')); },
           function() {
                             var idx, length;
-                            length = data.multi_header.length;
+                            length = options.data.multi_header.length;
                             for (idx = 0; idx < length; idx++) {
-                              if (data.multi_header[idx].parsed === null) {
-                                data = null;
+                              if (options.data.multi_header[idx].parsed === null) {
+                                options.data = null;
                                 break;
                               }
                             }
-                            if (data !== null) {
-                              data = data.multi_header;
+                            if (options.data !== null) {
+                              options.data = options.data.multi_header;
                             } else {
-                              data = -1;
+                              options.data = -1;
                             }},
           function() {
                             var header;
-                            if(!data.multi_header) data.multi_header = [];
+                            if(!options.data.multi_header) options.data.multi_header = [];
                             try {
-                              header = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-                              delete data.uri;
-                              delete data.displayName;
-                              delete data.params;
+                              header = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                              delete options.data.uri;
+                              delete options.data.displayName;
+                              delete options.data.params;
                             } catch(e) {
                               header = null;
                             }
-                            data.multi_header.push( { 'position': peg$currPos,
+                            options.data.multi_header.push( { 'position': peg$currPos,
                                                       'offset': offset(),
                                                       'parsed': header
                                                     });},
           function() {
-                        data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
+                        options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                       },
           function(rseq_value) {
-                            data.value=parseInt(rseq_value.join('')); },
+                            options.data.value=parseInt(rseq_value.join('')); },
           "active",
           { type: "literal", value: "active", description: "\"active\"" },
           "pending",
@@ -529,17 +529,17 @@ module.exports = function(SIP) {
           "terminated",
           { type: "literal", value: "terminated", description: "\"terminated\"" },
           function() {
-                                  data.state = text(); },
+                                  options.data.state = text(); },
           "reason",
           { type: "literal", value: "reason", description: "\"reason\"" },
           function(reason) {
-                                  if (typeof reason !== 'undefined') data.reason = reason; },
+                                  if (typeof reason !== 'undefined') options.data.reason = reason; },
           function(expires) {
-                                  if (typeof expires !== 'undefined') data.expires = expires; },
+                                  if (typeof expires !== 'undefined') options.data.expires = expires; },
           "retry_after",
           { type: "literal", value: "retry_after", description: "\"retry_after\"" },
           function(retry_after) {
-                                  if (typeof retry_after !== 'undefined') data.retry_after = retry_after; },
+                                  if (typeof retry_after !== 'undefined') options.data.retry_after = retry_after; },
           "deactivated",
           { type: "literal", value: "deactivated", description: "\"deactivated\"" },
           "probation",
@@ -555,43 +555,43 @@ module.exports = function(SIP) {
           "invariant",
           { type: "literal", value: "invariant", description: "\"invariant\"" },
           function() {
-                        var tag = data.tag;
-                          data = new SIP.NameAddrHeader(data.uri, data.displayName, data.params);
-                          if (tag) {data.setParam('tag',tag)}
+                        var tag = options.data.tag;
+                          options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                          if (tag) {options.data.setParam('tag',tag)}
                         },
           "ttl",
           { type: "literal", value: "ttl", description: "\"ttl\"" },
           function(via_ttl_value) {
-                                data.ttl = via_ttl_value; },
+                                options.data.ttl = via_ttl_value; },
           "maddr",
           { type: "literal", value: "maddr", description: "\"maddr\"" },
           function(via_maddr) {
-                                data.maddr = via_maddr; },
+                                options.data.maddr = via_maddr; },
           "received",
           { type: "literal", value: "received", description: "\"received\"" },
           function(via_received) {
-                                data.received = via_received; },
+                                options.data.received = via_received; },
           "branch",
           { type: "literal", value: "branch", description: "\"branch\"" },
           function(via_branch) {
-                                data.branch = via_branch; },
+                                options.data.branch = via_branch; },
           "rport",
           { type: "literal", value: "rport", description: "\"rport\"" },
           function() {
                                 if(typeof response_port !== 'undefined')
-                                  data.rport = response_port.join(''); },
+                                  options.data.rport = response_port.join(''); },
           function(via_protocol) {
-                                data.protocol = via_protocol; },
+                                options.data.protocol = via_protocol; },
           { type: "literal", value: "UDP", description: "\"UDP\"" },
           { type: "literal", value: "TCP", description: "\"TCP\"" },
           { type: "literal", value: "TLS", description: "\"TLS\"" },
           { type: "literal", value: "SCTP", description: "\"SCTP\"" },
           function(via_transport) {
-                                data.transport = via_transport; },
+                                options.data.transport = via_transport; },
           function() {
-                                data.host = text(); },
+                                options.data.host = text(); },
           function(via_sent_by_port) {
-                                data.port = parseInt(via_sent_by_port.join('')); },
+                                options.data.port = parseInt(via_sent_by_port.join('')); },
           function(ttl) {
                                 return parseInt(ttl.join('')); },
           "stuns",
@@ -599,9 +599,9 @@ module.exports = function(SIP) {
           "stun",
           { type: "literal", value: "stun", description: "\"stun\"" },
           function(scheme) {
-                                data.scheme = scheme; },
+                                options.data.scheme = scheme; },
           function(host) {
-                                data.host = host; },
+                                options.data.host = host; },
           function() {
                                 return text(); },
           "?transport=",
@@ -611,9 +611,9 @@ module.exports = function(SIP) {
           "turn",
           { type: "literal", value: "turn", description: "\"turn\"" },
           function() {
-                                data.transport = transport; },
+                                options.data.transport = transport; },
           function() {
-                            data = text(); }
+                            options.data = text(); }
         ],
 
         peg$bytecode = [
@@ -1267,24 +1267,32 @@ module.exports = function(SIP) {
       return stack[0];
     }
 
-    var data = {};
+    options.data = {};
 
     peg$result = peg$parseRule(peg$startRuleIndex);
 
     if (peg$result !== peg$FAILED && peg$currPos === input.length) {
-      return data;
+      return peg$result;
     } else {
       if (peg$result !== peg$FAILED && peg$currPos < input.length) {
         peg$fail({ type: "end", description: "end of input" });
       }
 
-      return -1;
+      throw peg$buildException(null, peg$maxFailExpected, peg$maxFailPos);
     }
   }
 
   return {
     SyntaxError: SyntaxError,
-    parse:       function (input, startRule) {return parse(input, {startRule: startRule});}
+    parse:       function parseCustom(input, startRule) {
+      var options = {startRule: startRule};
+      try {
+        parse(input, options);
+      } catch (e) {
+        options.data = -1;
+      }
+      return options.data;
+    }
   };
 };
 /* jshint ignore:end */
