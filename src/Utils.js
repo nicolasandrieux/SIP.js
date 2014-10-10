@@ -146,7 +146,7 @@ Utils= {
     if (!host) {
       return;
     } else {
-      host = SIP.Grammar.parse(host,'host');
+      host = SIP.Grammar.parse(host,'host', SIP);
       if (host !== -1) {
         return host.host_type;
       }

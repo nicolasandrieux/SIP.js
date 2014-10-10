@@ -94,7 +94,7 @@ quoted_pair = "\\" ( [\x00-\x09] / [\x0B-\x0C] / [\x0E-\x7F] )
 //=======================
 
 SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
-                        options.data.uri = new SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port);
+                        options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port);
                         delete options.data.scheme;
                         delete options.data.user;
                         delete options.data.host;
@@ -103,7 +103,7 @@ SIP_URI_noparams  = uri_scheme ":"  userinfo ? hostport {
                       }
 
 SIP_URI         = uri_scheme ":"  userinfo ? hostport uri_parameters headers ? {
-                        options.data.uri = new SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
+                        options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
                         delete options.data.scheme;
                         delete options.data.user;
                         delete options.data.host;
@@ -276,7 +276,7 @@ absoluteURI       = scheme ":" ( hier_part / opaque_part )
                     {
                       // lots of tests fail if this isn't guarded...
                       if (options.startRule === 'Refer_To') {
-                        options.data.uri = new SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
+                        options.data.uri = new options.SIP.URI(options.data.scheme, options.data.user, options.data.host, options.data.port, options.data.uri_params, options.data.uri_headers);
                         delete options.data.scheme;
                         delete options.data.user;
                         delete options.data.host;
@@ -403,7 +403,7 @@ contact_param       = (addr_spec / name_addr) (SEMI contact_params)* {
                         var header;
                         if(!options.data.multi_header) options.data.multi_header = [];
                         try {
-                          header = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                          header = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                           delete options.data.uri;
                           delete options.data.displayName;
                           delete options.data.params;
@@ -551,7 +551,7 @@ event_param       = generic_param
 
 From        = ( addr_spec / name_addr ) ( SEMI from_param )* {
                 var tag = options.data.tag;
-                  options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                  options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                   if (tag) {options.data.setParam('tag',tag)}
                 }
 
@@ -573,7 +573,7 @@ Min_Expires  = min_expires: delta_seconds {options.data = min_expires; }
 // Name_Addr
 
 Name_Addr_Header =  ( displayName )* LAQUOT SIP_URI RAQUOT ( SEMI generic_param )* {
-                        options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                        options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                       }
 
 // PROXY-AUTHENTICATE
@@ -659,7 +659,7 @@ rec_route     = name_addr ( SEMI rr_param )* {
                   var header;
                   if(!options.data.multi_header) options.data.multi_header = [];
                   try {
-                    header = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                    header = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                     delete options.data.uri;
                     delete options.data.displayName;
                     delete options.data.params;
@@ -676,7 +676,7 @@ rr_param      = generic_param
 // REFER-TO
 
 Refer_To = ( addr_spec / name_addr / absoluteURI ) ( SEMI r_param )* {
-              options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+              options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
             }
 
 r_param = generic_param
@@ -743,7 +743,7 @@ Supported  = ( option_tag (COMMA option_tag)* )?
 
 To         = ( addr_spec / name_addr ) ( SEMI to_param )* {
               var tag = options.data.tag;
-                options.data = new SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
+                options.data = new options.SIP.NameAddrHeader(options.data.uri, options.data.displayName, options.data.params);
                 if (tag) {options.data.setParam('tag',tag)}
               }
 
