@@ -1,4 +1,4 @@
-var Grammar = require('./Grammar/dist/Grammar');
+var Grammar = require('./Grammar/index.js');
 
 module.exports = {
   parse: function parseCustom (input, startRule, SIP) {
