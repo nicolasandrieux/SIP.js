@@ -106,38 +106,7 @@ module.exports = function(grunt) {
       grammar: {
         src: 'src/Grammar/src/Grammar.pegjs',
         dest: 'src/Grammar/dist/Grammar.js',
-        options: {
-          optimize: 'size',
-          allowedStartRules: [
-             'Contact',
-             'Name_Addr_Header',
-             'Record_Route',
-             'Request_Response',
-             'SIP_URI',
-             'Subscription_State',
-             'Via',
-             'absoluteURI',
-             'Call_ID',
-             'Content_Disposition',
-             'Content_Length',
-             'Content_Type',
-             'CSeq',
-             'displayName',
-             'Event',
-             'From',
-             'host',
-             'Max_Forwards',
-             'Proxy_Authenticate',
-             'quoted_string',
-             'Refer_To',
-             'stun_URI',
-             'To',
-             'turn_URI',
-             'uuid',
-             'WWW_Authenticate',
-             'challenge'
-          ]
-        }
+        options: require('./pegjs.json')
       }
     },
     trimtrailingspaces: {
