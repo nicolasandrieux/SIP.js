@@ -43,4 +43,4 @@ require('./UA')(SIP);
 SIP.Hacks = require('./Hacks');
 require('./SanityCheck')(SIP);
 SIP.DigestAuthentication = require('./DigestAuthentication')(SIP.Utils);
-SIP.Grammar = require('./Grammar/dist/Grammar');
+SIP.Grammar = require('./Grammar');

@@ -1284,15 +1284,7 @@ module.exports = (function() {
 
   return {
     SyntaxError: SyntaxError,
-    parse:       function parseCustom(input, startRule, SIP) {
-      var options = {startRule: startRule, SIP: SIP};
-      try {
-        parse(input, options);
-      } catch (e) {
-        options.data = -1;
-      }
-      return options.data;
-    }
+    parse:       parse
   };
 })();
 /* jshint ignore:end */

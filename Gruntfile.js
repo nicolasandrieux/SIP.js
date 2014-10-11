@@ -170,16 +170,6 @@ module.exports = function(grunt) {
     var fs = require('fs');
     var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
     var modified_grammar = grammar;
-    function parseCustom (input, startRule, SIP) {
-      var options = {startRule: startRule, SIP: SIP};
-      try {
-        parse(input, options);
-      } catch (e) {
-        options.data = -1;
-      }
-      return options.data;
-    }
-    modified_grammar = modified_grammar.replace(/parse:( *)parse/, 'parse:$1' + parseCustom);
 
     // Don't jshint this big chunk of minified code
     modified_grammar =
