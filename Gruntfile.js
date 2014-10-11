@@ -72,7 +72,7 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      src: ['src/**/*.js', "!src/polyfills/**/*.js"],
+      src: ['src/**/*.js', "!src/polyfills/**/*.js", "!src/Grammar/dist/Grammar.js"],
       options: {
         jshintrc: true
       }
@@ -162,26 +162,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-peg');
   grunt.loadNpmTasks('grunt-trimtrailingspaces');
 
-
-  // Task for building SIP.js Grammar.js and Grammar.min.js files.
-  grunt.registerTask('post_peg', function(){
-    // Modify the generated Grammar.js file with custom changes.
-    console.log('"grammar" task: applying custom changes to Grammar.js ...');
-    var fs = require('fs');
-    var grammar = fs.readFileSync('src/Grammar/dist/Grammar.js').toString();
-    var modified_grammar = grammar;
-
-    // Don't jshint this big chunk of minified code
-    modified_grammar =
-      "/* jshint ignore:start */\n" +
-      modified_grammar +
-      "\n/* jshint ignore:end */\n";
-
-    fs.writeFileSync('src/Grammar/dist/Grammar.js', modified_grammar);
-    console.log('OK');
-  });
-
-  grunt.registerTask('grammar', ['peg', 'post_peg']);
+  grunt.registerTask('grammar', ['peg']);
 
   // Task for building sip-devel.js (uncompressed), sip-X.Y.Z.js (uncompressed)
   // and sip-X.Y.Z.min.js (minified).
