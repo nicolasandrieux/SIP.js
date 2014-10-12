@@ -106,7 +106,7 @@ module.exports = function(grunt) {
       grammar: {
         src: 'src/Grammar/src/Grammar.pegjs',
         dest: 'src/Grammar/dist/Grammar.js',
-        options: require('./pegjs.json')
+        options: require('./src/Grammar/peg.json')
       }
     },
     trimtrailingspaces: {
