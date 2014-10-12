@@ -223,7 +223,7 @@ Session.prototype = {
       // normalizeTarget allows instances of SIP.URI to pass through unaltered,
       // so try to make one ahead of time
       try {
-        target = SIP.Grammar.parse(target, 'Refer_To', SIP).uri || target;
+        target = SIP.Grammar.parse(target, 'Refer_To').uri || target;
       } catch (e) {
         this.logger.debug(".refer() cannot parse Refer_To from", target);
         this.logger.debug("...falling through to normalizeTarget()");

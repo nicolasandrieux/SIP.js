@@ -1,7 +1,9 @@
 var Grammar = require('./Grammar/index.js');
 
-module.exports = {
-  parse: function parseCustom (input, startRule, SIP) {
+module.exports = function (SIP) {
+
+return {
+  parse: function parseCustom (input, startRule) {
     var options = {startRule: startRule, SIP: SIP};
     try {
       Grammar.parse(input, options);
@@ -10,4 +12,6 @@ module.exports = {
     }
     return options.data;
   }
+};
+
 };

@@ -18,7 +18,7 @@ describe('Grammar', function () {
     var contacts;
 
     beforeEach(function () {
-      contacts = SIP.Grammar.parse(contactString, 'Contact', SIP);
+      contacts = SIP.Grammar.parse(contactString, 'Contact');
       expect(contacts.length).toEqual(3);
     });
 
@@ -160,7 +160,7 @@ describe('Grammar', function () {
     var via;
 
     beforeEach(function () {
-      via = SIP.Grammar.parse(viaString, 'Via', SIP);
+      via = SIP.Grammar.parse(viaString, 'Via');
     });
 
     var viaHas = itHas.bind(null, function () { return via; });
@@ -179,7 +179,7 @@ describe('Grammar', function () {
     var cseq;
 
     beforeEach(function () {
-      cseq = SIP.Grammar.parse(cseqString, 'CSeq', SIP);
+      cseq = SIP.Grammar.parse(cseqString, 'CSeq');
     });
 
     var cseqHas = itHas.bind(null, function () { return cseq; });
@@ -193,7 +193,7 @@ describe('Grammar', function () {
     var challenge;
 
     beforeEach(function () {
-      challenge = SIP.Grammar.parse(challengeString, 'challenge', SIP);
+      challenge = SIP.Grammar.parse(challengeString, 'challenge');
     });
 
     var challengeHas = itHas.bind(null, function () { return challenge; });
@@ -211,7 +211,7 @@ describe('Grammar', function () {
     var evt;
 
     beforeEach(function () {
-      evt = SIP.Grammar.parse(eventString, 'Event', SIP);
+      evt = SIP.Grammar.parse(eventString, 'Event');
     });
 
     eventHas = itHas.bind(null, function () { return evt; });
@@ -223,7 +223,7 @@ describe('Grammar', function () {
   describe('Content-Disposition', function () {
     ['session', 'render'].forEach(function (dispString) {
       itHas(
-        SIP.Grammar.parse.bind(SIP.Grammar, dispString, 'Content_Disposition', SIP),
+        SIP.Grammar.parse.bind(SIP.Grammar, dispString, 'Content_Disposition'),
         'type',
         dispString
       );
@@ -233,11 +233,11 @@ describe('Grammar', function () {
   var uuidString = "f6e15cd0-17ed-11e4-8c21-0800200c9a66";
   describe('parsing a UUID', function () {
     it('returns the input for correct UUIDs', function () {
-      expect(SIP.Grammar.parse(uuidString, 'uuid', SIP)).toEqual(uuidString);
+      expect(SIP.Grammar.parse(uuidString, 'uuid')).toEqual(uuidString);
     });
 
     it('returns -1 for incorrect UUIDs', function () {
-      expect(SIP.Grammar.parse("XXX bad UUID XXX", 'uuid', SIP)).toEqual(-1);
+      expect(SIP.Grammar.parse("XXX bad UUID XXX", 'uuid')).toEqual(-1);
     });
   });
 });

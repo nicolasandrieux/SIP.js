@@ -188,7 +188,7 @@ URI.prototype = {
   * @param {String} uri
   */
 URI.parse = function(uri) {
-  uri = SIP.Grammar.parse(uri,'SIP_URI', SIP);
+  uri = SIP.Grammar.parse(uri,'SIP_URI');
 
   if (uri !== -1) {
     return uri;
