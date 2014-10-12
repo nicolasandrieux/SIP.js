@@ -139,16 +139,16 @@ module.exports = function(grunt) {
   grunt.registerTask('build', ['trimtrailingspaces:main', 'devel', 'uglify', 'copy']);
 
   // Task for building sip-devel.js (uncompressed).
-  grunt.registerTask('devel', ['jshint', 'browserify']);
+  grunt.registerTask('devel', ['jshint', 'quick']);
 
-  grunt.registerTask('quick', ['browserify']);
+  grunt.registerTask('quick', ['grammar', 'browserify']);
 
   // Test tasks.
   grunt.registerTask('test',['jasmine']);
 
   // Travis CI task.
   // Doc: http://manuel.manuelles.nl/blog/2012/06/22/integrate-travis-ci-into-grunt/
-  grunt.registerTask('travis', ['grammar', 'devel', 'test']);
+  grunt.registerTask('travis', ['devel', 'test']);
 
   // Default task is an alias for 'build'.
   // I know this is annoying... but you could always do grunt build. This encourages better code testing! --Eric Green
