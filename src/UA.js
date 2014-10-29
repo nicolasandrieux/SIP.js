@@ -1206,7 +1206,7 @@ UA.configuration_check = {
 
         if(url === -1) {
           return;
-        } else if(url.scheme !== 'wss' && url.scheme !== 'ws') {
+        } else if(url.scheme !== 'wss' && url.scheme !== 'ws' && url.scheme !== 'udp') {
           return;
         } else {
           wsServers[idx].sip_uri = '<sip:' + url.host + (url.port ? ':' + url.port : '') + ';transport=ws;lr>';
