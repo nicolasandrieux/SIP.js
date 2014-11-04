@@ -1105,6 +1105,7 @@ UA.configuration_skeleton = (function() {
       "mediaHandlerFactory",
       "media",
       "mediaConstraints",
+      "lazyMedia",
       "authenticationFactory",
 
       // Post-configuration generated parameters
@@ -1458,6 +1459,12 @@ UA.configuration_check = {
     mediaHandlerFactory: function(mediaHandlerFactory) {
       if (mediaHandlerFactory instanceof Function) {
         return mediaHandlerFactory;
+      }
+    },
+
+    lazyMedia: function(lazyMedia) {
+      if (typeof lazyMedia === 'boolean') {
+        return lazyMedia;
       }
     },
 

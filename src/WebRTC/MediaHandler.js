@@ -36,6 +36,7 @@ var MediaHandler = function(session, options) {
   this.mediaStreamManager = options.mediaStreamManager || new SIP.WebRTC.MediaStreamManager(this.logger);
   this.audioMuted = false;
   this.videoMuted = false;
+  this.lazyMedia = options.lazyMedia || true;
 
   // old init() from here on
   var idx, length, server,
@@ -224,6 +225,11 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     }
 
     return streamPromise
+      .then(function setRemoteDescription () {
+        if (self.lazyMedia && self.remoteDescription && !self.hasOffer('remote')) {
+          return new SIP.Utils.Promise(self.peerConnection.setRemoteDescription.bind(self.peerConnection, self.remoteDescription));
+        }
+      })
       .then(function streamAdditionSucceeded() {
         if (self.hasOffer('remote')) {
           self.peerConnection.ondatachannel = function (evt) {
@@ -259,7 +265,14 @@ MediaHandler.prototype = Object.create(SIP.MediaHandler.prototype, {
     this.emit('setDescription', rawDescription);
 
     var description = new SIP.WebRTC.RTCSessionDescription(rawDescription);
-    return new SIP.Utils.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
+    if (!this.lazyMedia || description.type === 'answer') {
+      return new SIP.Utils.Promise(this.peerConnection.setRemoteDescription.bind(this.peerConnection, description));
+    }
+    else {
+      // remember for later, isn't actually applied until getDescription
+      this.remoteDescription = description;
+      return SIP.Utils.Promise.resolve();
+    }
   }},
 
 // Functions the session can use, but only because it's convenient for the application

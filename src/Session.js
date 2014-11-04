@@ -998,6 +998,7 @@ InviteServerContext = function(ua, request) {
 
   //Initialize Media Session
   this.mediaHandler = this.mediaHandlerFactory(this, {
+    lazyMedia: ua.configuration.lazyMedia,
     RTCConstraints: {"optional": [{'DtlsSrtpKeyAgreement': 'true'}]}
   });
 
