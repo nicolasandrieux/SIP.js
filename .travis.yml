@@ -8,6 +8,6 @@ node_js:
 notifications:
   email:
     recipients:
-      - developer@onsip.com
+      - joseph@onsip.com
     on_success: change
     on_failure: always
